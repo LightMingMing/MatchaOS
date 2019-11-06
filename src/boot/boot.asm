@@ -3,6 +3,8 @@ org	0x7c00
 
 BaseOfStack equ	0x7c00
 
+%include "fat12.inc"
+
 Label_Start:
 	; 各个段寄存器值对齐
 	mov	ax, cs			; cs=0x0000, ip=0x7c00
@@ -28,20 +30,28 @@ Label_Start:
 	mov	ax, 1301h
 	mov	bx, 000fh
 	mov	cx, 10
+	mov	dx, 0000h
 	push	ax
 	mov	ax, ds
 	mov	es, ax
 	pop	ax
 	mov	bp, StartBootMessage	; es:bp指向要显示的字符串的地址
 	int	10h
+	inc	byte [DisMsgLineNum]
 
+	; test
+	mov	ax, 0x9000
+	mov	es, ax
+	mov	ax, 0
+	mov	bx, 0
+	mov	cl, 1
+	call	Func_Read_Sector
 
-Label_Finish:
-	hlt
+Label_End:
+	jmp Label_Finish
 
 
 StartBootMessage: db "Start Boot"
 
 times	510 - ($ - $$) db 0
 dw	0xaa55	; 倒数2个字节分别为0xaa, 0x55. (BIOS会进行检查)
-
