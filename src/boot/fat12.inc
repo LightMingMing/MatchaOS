@@ -63,9 +63,6 @@ Index		dw 0			; 索引
 
 ; message
 ReadSecErr:	db "Read Sector Error!"	; 18-byte
-NoLoaderErr:	db "No LOADER Found"
-; filename
-FileName:	db "LOADER  BIN",0
 
 [BITS 16]
 
@@ -117,7 +114,13 @@ Label_Read_Sector_Error:
 	jmp	Label_Finish
 
 
-Label_Search_File_In_Root_Dir:
+Func_Search_File_In_Root_Dir:
+	; si 文件名
+	; cx 返回起始簇号
+	push	bp
+	mov	bp, sp
+	sub	esp, 2
+	mov	[bp-2], si
 	mov	word [Index], 0
 Label_Search_In_Next_Sector:
 	cmp	word [Index], RootSecCnt
@@ -129,7 +132,7 @@ Label_Search_In_Next_Sector:
 	add	ax, [Index]
 	mov	cl, 1
 	call	Func_Read_Sector
-	mov	si, FileName
+	mov	si, [bp-2]
 	mov	di, 8000h
 	cld			; 清除方向标记,si,di向前移动
 	mov	dx, 0
@@ -142,14 +145,14 @@ Label_Search_In_Next_Entry:
 
 Label_Cmp_FileName:
 	cmp	cx, 11		; 文件名+扩展名 11-byte
-	je	Label_FileName_Found
+	je	Label_Found
 	inc	cx
 	lodsb			; si指向的单元读入累加器al, 然后si++
 	cmp	al, byte [es:di]
 	je	Label_Cmp_Next_Char
 	and	di, 0ffe0h	; 当前目录项, 一个目录项 32-byte
 	add	di, 32
-	mov	si, FileName
+	mov	si, [bp-2]
 	jmp	Label_Search_In_Next_Entry
 
 Label_Cmp_Next_Char:
@@ -162,23 +165,18 @@ Label_Ready_Goto_Next_Sector:
 	jmp	Label_Search_In_Next_Sector
 
 	
-Label_FileName_Found:
-
-	jmp	Label_Finish
+Label_Found:
+	mov	cx, 1	; temp
+	jmp	Label_Search_File_Finish
 
 Label_Not_Found:	
-	mov	ax, 1301h
-	mov	bx, 000ch
-	mov	cx, 15
-	mov	dh, byte [DisMsgLineNum]
-	mov	dl, 0
-	push	ax
-	mov	ax, ds
-	mov	es, ax
-	pop	ax
-	mov	bp, NoLoaderErr
-	int	10h
-	jmp	Label_Finish
+	mov	cx, 0
+
+Label_Search_File_Finish:
+	add	esp, 2
+	pop	bp
+	ret
+
 
 Label_Finish:
 	hlt

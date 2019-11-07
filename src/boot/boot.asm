@@ -47,15 +47,34 @@ Label_Start:
 	mov	cl, 1
 	call	Func_Read_Sector
 
-	; test search file
-	jmp	Label_Search_File_In_Root_Dir
-		
+	; search "Loader.bin"
+	mov	si, LoaderFileName
+	call	Func_Search_File_In_Root_Dir
+	cmp	cx, 0
+	je	Label_No_LoaderBin
+	
+	jmp	Label_End
+
+Label_No_LoaderBin:
+	mov     ax, 1301h
+	mov     bx, 000ch
+	mov     cx, 15
+	mov     dh, byte [DisMsgLineNum]
+	mov     dl, 0
+	push    ax
+	mov     ax, ds
+	mov     es, ax
+	pop     ax
+	mov     bp, NoLoaderErr
+	int     10h
 
 Label_End:
 	jmp Label_Finish
 
 
-StartBootMessage: db "Start Boot"
+StartBootMessage:	db "Start Boot"
+NoLoaderErr:		db "No LOADER Found"
+LoaderFileName:		db "LOADER  BIN",0
 
 times	510 - ($ - $$) db 0
 dw	0xaa55	; 倒数2个字节分别为0xaa, 0x55. (BIOS会进行检查)
