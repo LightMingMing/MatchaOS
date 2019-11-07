@@ -39,13 +39,17 @@ Label_Start:
 	int	10h
 	inc	byte [DisMsgLineNum]
 
-	; test
+	; test read sector
 	mov	ax, 0x9000
 	mov	es, ax
 	mov	ax, 0
 	mov	bx, 0
 	mov	cl, 1
 	call	Func_Read_Sector
+
+	; test serarch file
+	jmp	Label_Search_File_In_Root_Dir
+		
 
 Label_End:
 	jmp Label_Finish

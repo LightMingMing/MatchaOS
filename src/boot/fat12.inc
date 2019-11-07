@@ -29,10 +29,11 @@
 RootSecCnt		equ 14	; 根目录扇区数224*32/512
 SecNumOfRootBegin	equ 19	; 根目录开始扇区号
 SecNumOfFAT1Begin	equ 1	; FAT1开始扇区号
+EntPerSec		equ 16	; 每扇区目录数512/32=16
 
 ; BPB(BIOS Parameter Block) structure common to FAT12, FAT16 and FAT32
 jmp Label_Boot
-nop
+;nop
 BS_OEMName	db 'MatchaOS'	; 厂商名, 8-byte
 BPB_BytsPerSec	dw 512		; 每扇区512-byte
 BPB_SecPerClus	db 1		; 每簇扇区数(2的次方数)
@@ -51,15 +52,20 @@ BPB_TotSec32	dd 0		; 总扇区数(FAT12, FAT16扇区数大于0xffff时,该属性
 BS_DrvNum	db 0		; Int 0x13 驱动号(值为0x00或0x80)
 BS_Reserved1	db 0		; 保留
 BS_BootSig	db 0x29		; 扩展引导标记
-BS_VollID	db 0		; 卷序列号
+BS_VollID	dd 0		; 卷序列号
 BS_VolLab	db 'Boot Loader'; 卷标11-byte
 BS_FilSysType	db 'FAT12   '	; FAT类型
 
 
-; variable
+; temp variable
 DisMsgLineNum	db 0			; 打印消息行号
+Index		dw 0			; 索引
+
 ; message
-ReadSecErr:	db "Read Sector Error!"	; 18-byte 
+ReadSecErr:	db "Read Sector Error!"	; 18-byte
+NoLoaderErr:	db "No LOADER Found"
+; filename
+FileName:	db "LOADER  BIN",0
 
 [BITS 16]
 
@@ -107,6 +113,70 @@ Label_Read_Sector_Error:
 	mov	es, ax
 	pop	ax
 	mov	bp, ReadSecErr
+	int	10h
+	jmp	Label_Finish
+
+
+Label_Search_File_In_Root_Dir:
+	mov	word [Index], 0
+Label_Search_In_Next_Sector:
+	cmp	word [Index], RootSecCnt
+	je	Label_Not_Found
+	mov	ax, 0
+	mov	es, ax
+	mov	bx, 8000h
+	add	ax, SecNumOfRootBegin
+	add	ax, [Index]
+	mov	cl, 1
+	call	Func_Read_Sector
+	mov	si, FileName
+	mov	di, 8000h
+	cld			; 清除方向标记,si,di向前移动
+	mov	dx, 0
+
+Label_Search_In_Next_Entry:
+	cmp	dx, EntPerSec
+	je	Label_Ready_Goto_Next_Sector
+	inc	dx
+	mov	cx, 0
+
+Label_Cmp_FileName:
+	cmp	cx, 11		; 文件名+扩展名 11-byte
+	je	Label_FileName_Found
+	inc	cx
+	lodsb			; si指向的单元读入累加器al, 然后si++
+	cmp	al, byte [es:di]
+	je	Label_Cmp_Next_Char
+	and	di, 0ffe0h	; 当前目录项, 一个目录项 32-byte
+	add	di, 32
+	mov	si, FileName
+	jmp	Label_Search_In_Next_Entry
+
+Label_Cmp_Next_Char:
+	inc	di
+	jmp	Label_Cmp_FileName
+
+
+Label_Ready_Goto_Next_Sector:
+	inc	word [Index]
+	jmp	Label_Search_In_Next_Sector
+
+	
+Label_FileName_Found:
+
+	jmp	Label_Finish
+
+Label_Not_Found:	
+	mov	ax, 1301h
+	mov	bx, 000ch
+	mov	cx, 15
+	mov	dh, byte [DisMsgLineNum]
+	mov	dl, 0
+	push	ax
+	mov	ax, ds
+	mov	es, ax
+	pop	ax
+	mov	bp, NoLoaderErr
 	int	10h
 	jmp	Label_Finish
 

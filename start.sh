@@ -2,6 +2,7 @@
 bin=bin
 matcha_img=${bin}/matcha.img
 boot_bin=${bin}/boot.bin
+loader_bin=${bin}/loader.bin
 
 bochs_config=${bin}/bochs_config
 
@@ -14,6 +15,12 @@ if [[ ! -e ${matcha_img} ]]; then
 fi
 
 dd if=${boot_bin} of=${matcha_img} bs=512 count=1 conv=notrunc >> /dev/null 2>&1
+
+# mount 'loader.bin' for mac
+mount_node=$(hdiutil mount ${matcha_img} | sed 's/^[^[:space:]]*[[:space:]]*//')
+echo "${mount_node}"
+cp ${loader_bin} "${mount_node}"
+umount "${mount_node}"
 
 if [[ ! -e ${bochs_config} ]]; then
 	cat>${bochs_config}<<EOF
