@@ -47,7 +47,7 @@ Label_Start:
 	mov	cl, 1
 	call	Func_Read_Sector
 
-	; test serarch file
+	; test search file
 	jmp	Label_Search_File_In_Root_Dir
 		
 
