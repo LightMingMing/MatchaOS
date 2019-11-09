@@ -25,10 +25,23 @@
 ; |0    Boot Sector     |
 ; |---------------------|
 
+; Root Dir structure
+; ---------------------------------------------------------------------------------------
+; |0       10|    11    |12  21|22         23|24         25|26         27|28          31|
+; | Dir_Name | DIR_Attr | RSVD | DIR_WrtTime | DIR_WrtDate | DIR_FstClus | DIR_FileSize |
+; ---------------------------------------------------------------------------------------
+;
+; FAT structure
+; -------------
+; |0        11|
+; | FAT Entry |	Value 0x002~0xFEF, 已用簇, 下一簇号标识
+; -------------
 
 RootSecCnt		equ 14	; 根目录扇区数224*32/512
-SecNumOfRootBegin	equ 19	; 根目录开始扇区号
-SecNumOfFAT1Begin	equ 1	; FAT1开始扇区号
+FirstFAT1SecNum		equ 1	; FAT1开始扇区号
+FirstRootDirSecNum	equ 19	; 根目录开始扇区号
+FirstDataSecNum		equ 33	; Data开始扇区号
+FirstDataClus		equ 2	; Data开始扇区所在簇号为2
 EntPerSec		equ 16	; 每扇区目录数512/32=16
 
 ; BPB(BIOS Parameter Block) structure common to FAT12, FAT16 and FAT32
@@ -58,8 +71,9 @@ BS_FilSysType	db 'FAT12   '	; FAT类型
 
 
 ; temp variable
-DisMsgLineNum	db 0			; 打印消息行号
+DisMsgLineNum	db 0			; 消息行号标记
 Index		dw 0			; 索引
+Odd		db 0			; 奇偶标志
 
 ; message
 ReadSecErr:	db "Read Sector Error!"	; 18-byte
@@ -100,27 +114,18 @@ Func_Read_Sector:
 	ret
 
 Label_Read_Sector_Error:
-	mov	ax, 1301h
-	mov	bx, 000ch
 	mov	cx, 18
-	mov	dh, byte [DisMsgLineNum]
-	mov	dl, 0
-	push	ax
-	mov	ax, ds
-	mov	es, ax
-	pop	ax
 	mov	bp, ReadSecErr
-	int	10h
+	call	Func_Display_Error_Message
 	jmp	Label_Finish
 
 
 Func_Search_File_In_Root_Dir:
-	; si 文件名
-	; cx 返回起始簇号
+	; ax 输入文件名地址/返回起始簇号
 	push	bp
 	mov	bp, sp
 	sub	esp, 2
-	mov	[bp-2], si
+	mov	[bp-2], ax
 	mov	word [Index], 0
 Label_Search_In_Next_Sector:
 	cmp	word [Index], RootSecCnt
@@ -128,7 +133,7 @@ Label_Search_In_Next_Sector:
 	mov	ax, 0
 	mov	es, ax
 	mov	bx, 8000h
-	add	ax, SecNumOfRootBegin
+	add	ax, FirstRootDirSecNum
 	add	ax, [Index]
 	mov	cl, 1
 	call	Func_Read_Sector
@@ -166,20 +171,75 @@ Label_Ready_Goto_Next_Sector:
 
 	
 Label_Found:
-	mov	cx, 1	; temp
+	and	di, 0ffe0h	; 当前目录项
+	add	di, 26		; 起始簇号
+	mov	ax, word [es:di]
 	jmp	Label_Search_File_Finish
 
 Label_Not_Found:	
-	mov	cx, 0
+	mov	ax, 0
 
 Label_Search_File_Finish:
 	add	esp, 2
 	pop	bp
 	ret
 
+Func_Next_Cluster_In_FAT_Entry:
+	; ax 输入当前簇号/输出下一簇号
+	push	es
+	push	bx
+	push	ax
+	mov	ax, 0
+	mov	es, ax
+	pop	ax
+	mov	byte [Odd], 0
+	mov	bx, 3
+	mul	bx
+	mov	bx, 2
+	div	bx
+	cmp	dx, 0
+	jz	Label_Read_Sectors
+	mov	byte [Odd], 1
+Label_Read_Sectors:
+	xor	dx, dx
+	mov	bx, [BPB_BytsPerSec]
+	div	bx
+	push	dx
+	add	ax, FirstFAT1SecNum
+	mov	cl, 2
+	mov	bx, 8000h
+	call	Func_Read_Sector
+	
+	pop	dx
+	add	bx, dx
+	mov	ax, [es:bx]
+	
+	cmp	byte [Odd], 0
+	jz	Label_Even
+	shr	ax, 4
+Label_Even:
+	and	ax, 0fffh
+	pop	bx
+	pop	es
+	ret
+
+
+Func_Display_Error_Message:
+	mov	bx, 000ch
+	jmp	Display_Message
+Func_Display_Message:
+	mov	bx, 000fh
+Display_Message:
+	mov	ax, ds
+	mov	es, ax
+	mov	ax, 1301h
+	mov	dx, 0
+	mov	dh, byte [DisMsgLineNum]
+	int	10h
+	add	byte [DisMsgLineNum], 2
+	ret
 
 Label_Finish:
 	hlt
-
 
 Label_Boot:
