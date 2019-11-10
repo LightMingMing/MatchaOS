@@ -45,7 +45,7 @@ FirstDataClus		equ 2	; Data开始扇区所在簇号为2
 EntPerSec		equ 16	; 每扇区目录数512/32=16
 
 ; BPB(BIOS Parameter Block) structure common to FAT12, FAT16 and FAT32
-jmp Label_Boot
+jmp Label_Skip_Inc
 ;nop
 BS_OEMName	db 'MatchaOS'	; 厂商名, 8-byte
 BPB_BytsPerSec	dw 512		; 每扇区512-byte
@@ -242,4 +242,4 @@ Display_Message:
 Label_Finish:
 	hlt
 
-Label_Boot:
+Label_Skip_Inc:
