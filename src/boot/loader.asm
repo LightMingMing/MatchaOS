@@ -4,6 +4,11 @@ org 10000h
 
 jmp	Label_Start
 
+BaseOfKernel		equ 0x00
+OffsetOfKernel		equ 0x100000
+TmpBaseOfKernel		equ 0x00
+TmpOffsetOfKernel	equ 0x7e00
+
 [SECTION gdt]
 
 LABEL_GDT:		dd 0,0				; 空段描述符
@@ -66,7 +71,102 @@ Label_Start:
 	mov	cr0, eax
 
 	sti	; 开启外部中断
+	
+Label_Search_Kernel_File:
+	mov	byte [DisMsgLineNum], 4
+	mov	ax, KernelFileName
+	call	Func_Search_File_In_Root_Dir
+	cmp	ax, 0
+	je	Label_No_Kernel_Found
 
+	; 将Kernel.bin加载至临时区内存0x7e00处
+	mov	bx, TmpBaseOfKernel
+	mov	es, bx
+	mov	bx, TmpOffsetOfKernel
+
+Label_Load_File:
+	push	ax
+	push	bx
+	mov	ah, 0eh
+	mov	al, '.'
+	mov	bl, 0fh
+	int	10h
+	pop	bx
+	pop	ax
+
+	push	ax
+	add	ax, FirstDataSecNum
+	sub	ax, FirstDataClus
+	mov	cl, 1
+	call	Func_Read_Sector
+	pop	ax
+
+	; 0x7e00临时区内数据拷贝至内存0x100000处
+	push	cx
+	push	eax
+	push	fs
+	push	edi
+	push	ds
+	push	esi
+	
+	mov	cx, [BPB_BytsPerSec]
+	mov	ax, BaseOfKernel
+	mov	fs, ax
+	mov	edi, dword [CurrentOffsetOfKernel]
+
+	mov	ax, TmpBaseOfKernel
+	mov	ds, ax
+	mov	esi, TmpOffsetOfKernel
+
+Loop_Copy_Kernel:
+	mov	al, byte [ds:esi]
+	mov	byte [fs:edi], al
+	inc	esi
+	inc	edi
+	loop	Loop_Copy_Kernel
+	
+	mov	eax, 0x1000
+	mov	ds, eax
+	mov	dword [CurrentOffsetOfKernel], edi
+	
+	pop	esi
+	pop	ds
+	pop	edi
+	pop	fs
+	pop	eax
+	pop	cx
+
+	call	Func_Next_Cluster_In_FAT_Entry
+	cmp	ax, 0fffh
+	jz	Label_File_Loaded
+	add	bx, [BPB_BytsPerSec]
+	jmp	Label_Load_File
+
+
+Label_File_Loaded:
+	mov	ax, 0B800h
+	mov	gs, ax
+	mov	ah, 0Fh				; 黑底白字
+	mov	al, 'G'
+	mov	[gs:((80 * 0 + 39) * 2)], ax	; 屏幕0行39列	
+
+Label_Kill_Motor:
+	push	dx
+	mov	dx, 03F2h
+	mov	al, 0
+	out	dx, al		; I/O端口写入命令, 关闭驱动马达
+	pop	dx
+	
+	jmp	$
+
+Label_No_Kernel_Found:
+	mov	cx, 15
+	mov	bp, NoKernelErr
+	call	Func_Display_Error_Message
 	jmp	Label_Finish
 
+CurrentOffsetOfKernel	dd OffsetOfKernel
+
 StartLoaderMessage:	db "Start Loader"
+NoKernelErr:		db "No KERNEL Found"
+KernelFileName:		db "KERNEL  BIN",0

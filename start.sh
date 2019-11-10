@@ -3,6 +3,7 @@ bin=bin
 matcha_img=${bin}/matcha.img
 boot_bin=${bin}/boot.bin
 loader_bin=${bin}/loader.bin
+kernel_bin=${bin}/kernel.bin
 
 bochs_config=${bin}/bochs_config
 
@@ -20,6 +21,7 @@ dd if=${boot_bin} of=${matcha_img} bs=512 count=1 conv=notrunc >> /dev/null 2>&1
 mount_node=$(hdiutil mount ${matcha_img} | sed 's/^[^[:space:]]*[[:space:]]*//')
 echo "${mount_node}"
 cp ${loader_bin} "${mount_node}"
+cp ${kernel_bin} "${mount_node}"
 umount "${mount_node}"
 
 if [[ ! -e ${bochs_config} ]]; then
