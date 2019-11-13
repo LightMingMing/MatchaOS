@@ -87,3 +87,37 @@ mov	fs, ax
 ### 结果
 FS段选择子为`0x10`, 基地址为`0x00000000`, 限长`0xffffffff`. 可见FS段寄存器已经有了4G的寻址能力.
 ![FS](image/FS.png)
+
+## 获取物理地址信息
+在实模式下, 通过BIOS中断服务程序`int 15h; AX=E820h`, 可以查询物理地址信息. 
+该中断服务程序详细信息参考[Query System Address Map](http://www.uruk.org/orig-grub/mem64mb.html)
+
+通过该中断程序, 可以获取一组Address Range Descriptor
+```
+Offset in Bytes		Name		Description
+	0	    BaseAddrLow		Low 32 Bits of Base Address
+	4	    BaseAddrHigh	High 32 Bits of Base Address
+	8	    LengthLow		Low 32 Bits of Length in Bytes
+	12	    LengthHigh		High 32 Bits of Length in Bytes
+	16	    Type		Address type of  this range.
+```
+
+
+如下是bochs内存配置为2G时的内存信息 ![mem_info](image/mem_info.png)
+
+```
+基地址(Hex)	长度(Hex)	类型
+0000 0000	0009 f000	1 ARM
+0009 f000	0000 1000	2 ARR
+000e 8000	0001 8000	2 ARR
+0010 0000	7fef 0000	1 ARM
+7fff 0000	0001 0000	3 Undefined
+fffc 0000	0004 0000	2 ARR
+
+"ARM" is AddressRangeMemory
+"ARR" is AddressRangeReserved
+
+共计:
+0x7fff8000 约为2G
+```
+

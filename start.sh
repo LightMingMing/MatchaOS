@@ -30,6 +30,7 @@ romimage: file=/usr/local/share/bochs/BIOS-bochs-latest
 vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 floppya: 1_44=${matcha_img}, status=inserted
 boot: floppy
+megs: 2048
 EOF
 fi
 

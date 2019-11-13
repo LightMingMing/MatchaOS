@@ -8,6 +8,7 @@ BaseOfKernel		equ 0x00
 OffsetOfKernel		equ 0x100000
 TmpBaseOfKernel		equ 0x00
 TmpOffsetOfKernel	equ 0x7e00
+AddrRangeDescBuffer	equ 0x7e00
 
 [SECTION gdt]
 
@@ -156,7 +157,35 @@ Label_Kill_Motor:
 	mov	al, 0
 	out	dx, al		; I/O端口写入命令, 关闭驱动马达
 	pop	dx
-	
+
+	mov	ebx, 0
+	mov	ax, 0
+	mov	es, ax
+	mov	di, AddrRangeDescBuffer
+
+; 获取物理地址信息
+Label_Query_Physical_Address_Info:
+	mov	eax, 0x0E820
+	mov	ecx, 20
+	mov	edx, 0x534d4150
+	int	15h
+	jc	Label_Query_Address_Info_Fail
+	add	di, 20
+	cmp	ebx, 0
+	jne	Label_Query_Physical_Address_Info
+	jmp	Label_Query_Address_Info_OK
+
+Label_Query_Address_Info_Fail:
+	mov	cx, 26
+	mov	bp, QueryAddressInfoErr
+	call	Func_Display_Error_Message
+	jmp	$	
+
+Label_Query_Address_Info_OK:
+	mov	cx, 23
+	mov	bp, QueryAddressInfoOK
+	call	Func_Display_Message
+
 	jmp	$
 
 Label_No_Kernel_Found:
@@ -169,4 +198,6 @@ CurrentOffsetOfKernel	dd OffsetOfKernel
 
 StartLoaderMessage:	db "Start Loader"
 NoKernelErr:		db "No KERNEL Found"
+QueryAddressInfoErr:	db "Query Address Info [Error]"
+QueryAddressInfoOK:	db "Query Address Info [OK]"
 KernelFileName:		db "KERNEL  BIN",0
