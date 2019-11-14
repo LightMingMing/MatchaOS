@@ -190,12 +190,26 @@ Label_Query_Address_Info_OK:
 	mov	bp, QueryAddressInfoOK
 	call	Func_Display_Message
 
+Label_Set_SVGA_Mode:
+	mov	ax, 4F02h
+	mov	bx, 4180h
+	int	10h
+	cmp	ax, 004Fh
+	jnz	Label_Set_SVGA_Mode_Fail
+	jmp	Label_Fihish
+
+Label_Set_SVGA_Mode_Fail:
+	mov	cx, 21
+	mov	bp, SetSVGAModeErr
+	call	Func_Display_Error_Message
 	jmp	Label_Finish
 
+	
 CurrentOffsetOfKernel	dd OffsetOfKernel
 
 StartLoaderMessage:	db "Start Loader"
 NoKernelErr:		db "No KERNEL Found"
 QueryAddressInfoErr:	db "Query Address Info [Error]"
 QueryAddressInfoOK:	db "Query Address Info [OK]"
+SetSVGAModeErr:		db "Set SVGA Mode [Error]"
 KernelFileName:		db "KERNEL  BIN",0
