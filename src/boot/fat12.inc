@@ -241,5 +241,6 @@ Display_Message:
 
 Label_Finish:
 	hlt
+	jmp	$
 
 Label_Skip_Inc:

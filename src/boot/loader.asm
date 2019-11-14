@@ -143,6 +143,10 @@ Loop_Copy_Kernel:
 	add	bx, [BPB_BytsPerSec]
 	jmp	Label_Load_File
 
+Label_No_Kernel_Found:
+	mov	cx, 15
+	mov	bp, NoKernelErr
+	call	Func_Display_Error_Message
 
 Label_File_Loaded:
 	mov	ax, 0B800h
@@ -179,19 +183,13 @@ Label_Query_Address_Info_Fail:
 	mov	cx, 26
 	mov	bp, QueryAddressInfoErr
 	call	Func_Display_Error_Message
-	jmp	$	
+	jmp	Label_Finish
 
 Label_Query_Address_Info_OK:
 	mov	cx, 23
 	mov	bp, QueryAddressInfoOK
 	call	Func_Display_Message
 
-	jmp	$
-
-Label_No_Kernel_Found:
-	mov	cx, 15
-	mov	bp, NoKernelErr
-	call	Func_Display_Error_Message
 	jmp	Label_Finish
 
 CurrentOffsetOfKernel	dd OffsetOfKernel
