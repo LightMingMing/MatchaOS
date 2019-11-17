@@ -23,6 +23,18 @@ GdtPtr	dw	GdtLen - 1
 SelectorCode32	equ LABEL_DESC_CODE32 - LABEL_GDT	; 代码段选择子, 值为0x8
 SelectorData32	equ LABEL_DESC_DATA32 - LABEL_GDT	; 数据段选择子, 值为0x10
 
+[SECTION gdt64]
+
+LABEL_GDT64:		dq 0
+LABEL_DESC_CODE64:	dq 0x0020980000000000
+LABEL_DESC_DATA64:	dq 0x0000920000000000
+
+GdtLen64 equ	$ - LABEL_GDT64
+GdtPtr64 dw	GdtLen64 - 1
+	 dd	LABEL_GDT64
+
+SelectorCode64	equ LABEL_DESC_CODE64 - LABEL_GDT64
+SelectorData64	equ LABEL_DESC_DATA64 - LABEL_GDT64
 
 [SECTION .s16]
 [BITS 16]
@@ -195,15 +207,111 @@ Label_Set_SVGA_Mode:
 	int	10h
 	cmp	ax, 004Fh
 	jnz	Label_Set_SVGA_Mode_Fail
-	jmp	Label_Finish
+	jmp	Label_Switch_To_Protect_Mode
 
 Label_Set_SVGA_Mode_Fail:
 	mov	cx, 21
 	mov	bp, SetSVGAModeErr
 	call	Func_Display_Error_Message
 	jmp	Label_Finish
-
 	
+Label_Switch_To_Protect_Mode:
+	cli
+	
+	db	0x66
+	lgdt	[GdtPtr]
+	
+	mov	eax, cr0
+	or	eax, 1
+	mov	cr0, eax
+
+	; 长跳转, 触发CS寄存器值的自动修改 
+	jmp	dword SelectorCode32:Label_Switch_To_Long_Mode
+
+
+[SECTION .s32]
+[BITS 32]
+
+Label_Switch_To_Long_Mode:
+	mov	ax, 0x10
+	mov	ds, ax
+	mov	es, ax
+	mov	fs, ax
+	mov	ss, ax
+	mov	esp, 7E00h
+
+	call	Func_Is_Support_Long_Mode
+	test	eax, eax
+	jz	Label_Not_Support_Long_Mode
+
+	; 初始化临时页目录项和页表项
+	mov	dword [0x90000], 0x91007
+	mov	dword [0x90800], 0x91007
+
+	mov	dword [0x91000], 0x92007
+	
+	mov	dword [0x92000], 0x000083
+	mov	dword [0x92008], 0x200083
+	mov	dword [0x92010], 0x400083
+	mov	dword [0x92018], 0x600083
+	mov	dword [0x92020], 0x800083
+	mov	dword [0x92028], 0xa00083
+	
+	; load GDTR
+	;db	0x66
+	lgdt	[GdtPtr64]
+
+	mov	ax, 0x10
+	mov	ds, ax
+	mov	es, ax
+	mov	fs, ax
+	mov	gs, ax
+	mov	ss, ax
+	mov	esp, 7E00h
+
+	; open PAE(物理地址扩展功能)
+	mov	eax, cr4
+	bts	eax, 5
+	mov	cr4, eax
+
+	; load cr3(临时页目录地址设置到cr3控制寄存器)
+	mov	eax, 0x90000
+	mov	cr3, eax
+	
+	; enable long-mode
+	mov	ecx, 0C0000080h	; IA32_EFER寄存器位于MSR寄存器组中
+	rdmsr			; 读IA32_EFER寄存器值至eax
+	bts	eax, 8		; 置位第8位
+	wrmsr
+
+	; open PE and pagine
+	mov	eax, cr0
+	bts	eax, 0
+	bts	eax, 31
+	mov	cr0, eax
+
+	jmp	SelectorCode64:OffsetOfKernel
+
+Func_Is_Support_Long_Mode:
+	; CPUID汇编指令的扩展功能项0x80000001的第29位, 代表是否支持IA-32e模式
+	mov	eax, 0x80000000
+	cpuid
+	cmp	eax, 0x80000001
+	setnb	al				; 无进位时(CF=0), 设置al等于1
+	jb	Label_Support_Long_Mode_Done	; 比较时, 左边小于右边时(CF=1), 则跳转
+	
+	mov	eax, 0x80000001
+	cpuid
+	bt	edx, 29				; 位测试, CF=29位(位从0开始)
+	setc	al				; 有进位时置1
+Label_Support_Long_Mode_Done:
+	movzx	eax, al				; 高位补零
+	ret
+
+Label_Not_Support_Long_Mode:
+	jmp	$
+
+
 CurrentOffsetOfKernel	dd OffsetOfKernel
 
 StartLoaderMessage:	db "Start Loader"
