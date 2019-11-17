@@ -140,7 +140,6 @@ Loop_Copy_Kernel:
 	call	Func_Next_Cluster_In_FAT_Entry
 	cmp	ax, 0fffh
 	jz	Label_File_Loaded
-	add	bx, [BPB_BytsPerSec]
 	jmp	Label_Load_File
 
 Label_No_Kernel_Found:
@@ -196,7 +195,7 @@ Label_Set_SVGA_Mode:
 	int	10h
 	cmp	ax, 004Fh
 	jnz	Label_Set_SVGA_Mode_Fail
-	jmp	Label_Fihish
+	jmp	Label_Finish
 
 Label_Set_SVGA_Mode_Fail:
 	mov	cx, 21
