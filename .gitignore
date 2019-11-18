@@ -1,5 +1,14 @@
 .DS_Store
 
-*.bin
+bin/*.bin
+bin/*.img
+bin/*.o
+bin/*.s
+bin/system
 
-*.img
+# CLion
+.idea
+*.xml
+*.iml
+CMakeLists.txt
+cmake-build-debug
