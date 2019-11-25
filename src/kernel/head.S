@@ -12,7 +12,7 @@ _start:
 	lgdt	GDT_PTR(%rip)
 
 	lidt	IDT_PTR(%rip)
-	
+
 	mov	$0x10, %ax
 	mov	%ax, %ds
 	mov	%ax, %es
@@ -38,6 +38,26 @@ entry64:
 	movq	%rax, %ss
 	movq	$0xffff800000007E00, %rsp
 
+setup_IDT:
+	leaq	ignore_int(%rip), %rdx
+	movq	$(0x8E0000080000), %rax
+	movw	%dx, %ax
+	movl	%edx, %ecx
+	shrl	$16, %ecx
+	shlq	$48, %rcx
+	addq	%rcx, %rax
+	shrq	$32, %rdx
+
+	leaq	IDT_Table(%rip), %rdi
+	mov	$256, %rcx
+setup_next_int_desc:
+	movq	%rax, (%rdi)
+	movq	%rdx, 8(%rdi)
+	addq	$16, %rdi
+	dec	%rcx
+	jne	setup_next_int_desc
+
+
 	movq	go_to_kernel(%rip), %rax
 	pushq	$0x08
 	pushq	%rax
@@ -46,6 +66,23 @@ entry64:
 go_to_kernel:
 	.quad	Start_Kernel
 
+
+ignore_int:
+	movq	$0x10, %rax
+	movq	%rax, %ds
+	movq	%rax, %es
+
+	leaq	int_msg(%rip), %rdx
+	movq	$0x00000000, %rsi
+	movq	$0x00ff0000, %rdi
+	movq	$0, %rax
+	callq	print_color
+	addq	$0x8, %rsp
+
+	hlt
+
+int_msg:
+	.asciz	"Unknown interrupt or exception!\n"
 
 // init page
 /*

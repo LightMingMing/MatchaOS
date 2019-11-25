@@ -95,5 +95,9 @@ void Start_Kernel() {
 
     print_color(GREEN, BLACK, "Nice, very good!\n");
 
+    // test
+    i = 1 / 0;
+    println("1/0 = %d", i);
+
     __asm__ __volatile__ ("hlt":: :);
 }
