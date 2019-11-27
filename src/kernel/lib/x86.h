@@ -7,7 +7,11 @@
 
 #define do_div(num, base) ({ \
 int __res; \
-__asm__("divq %%rcx":"=a" (num),"=d" (__res):"0" (num),"1" (0),"c" (base)); \
+__asm__ __volatile__("divq %%rcx":"=a" (num),"=d" (__res):"0" (num),"1" (0),"c" (base)); \
 __res; })
+
+#define hlt() ({\
+__asm__ __volatile__("hlt":: :); \
+})
 
 #endif //_X86_H
