@@ -18,11 +18,12 @@ extern struct gate_struct IDT_Table[];
                                 "addq   %4, %%rcx       \n\t"           \
                                 "shlq   $32, %%rcx      \n\t"           \
                                 "addq   %%rcx, %%rax    \n\t"           \
+                                "xorq   %%rcx, %%rcx    \n\t"           \
                                 "movl   %%edx, %%ecx    \n\t"           \
                                 "shrl   $16, %%ecx      \n\t"           \
                                 "shlq   $48, %%rcx      \n\t"           \
                                 "addq   %%rcx, %%rax    \n\t"           \
-                                "movq   %%rcx, %0       \n\t"           \
+                                "movq   %%rax, %0       \n\t"           \
                                 "shlq   $32, %%rdx      \n\t"           \
                                 "movq   %%rdx, %1       \n\t"           \
                                 :"=m" (*((unsigned long*)(gate_selector_address))),      \
