@@ -52,6 +52,11 @@ sh start.sh
 配置了一套ASCII字体, 并实现格式化打印消息
 ![format_print_message](doc/image/print.png)   
 
+中断和异常处理
+
+divide error
+![DE](doc/image/DE.png)
+
 ## 参考资料
 1. [(参考书源代码) MINE操作系统](https://gitee.com/MINEOS_admin)
 2. [清华大学操作系统实验ucore_os_lab](https://github.com/chyyuu/ucore_os_lab)
