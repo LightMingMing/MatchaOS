@@ -2,6 +2,8 @@
 // Created by 赵明明 on 2019/11/18.
 //
 #include "lib/stdio.h"
+#include "trap/gate.h"
+#include "trap/trap.h"
 
 void Start_Kernel() {
     // Linear Address of Frame Buffer
@@ -95,6 +97,10 @@ void Start_Kernel() {
 
     print_color(GREEN, BLACK, "Nice, very good!\n");
 
+    load_TR(8);
+    setup_TSS(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
+              0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
+    trap_init();
     // test
     i = 1 / 0;
     println("1/0 = %d", i);

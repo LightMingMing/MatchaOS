@@ -57,6 +57,28 @@ setup_next_int_desc:
 	dec	%rcx
 	jne	setup_next_int_desc
 
+setup_TSS:
+	leaq	TSS_Table(%rip), %rdx
+	xorq	%rax, %rax
+	xorq	%rcx, %rcx
+	mov	$0x89, %ax
+	shlq	$40, %rax
+	movl	%edx, %ecx
+	shrl	$24, %ecx
+	shlq	$56, %rcx
+	addq	%rcx, %rax
+	xorq	%rcx, %rcx
+	addq	%rcx, %rax
+	movl	%edx, %ecx
+	andl	$0xffffff, %ecx
+	shlq	$16, %rcx
+	addq	%rcx, %rax
+	mov	$103, %ax
+	
+	leaq	GDT_Table(%rip), %rdi
+	movq	%rax, 64(%rdi)
+	shrq	$32, %rdx
+	movq	%rdx, 72(%rdi)
 
 	movq	go_to_kernel(%rip), %rax
 	pushq	$0x08
