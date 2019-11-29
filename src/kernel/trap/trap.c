@@ -35,8 +35,20 @@ void trap_init() {
 
 static void general_exception_handling(char *name, unsigned long rsp, unsigned long error_code) {
     unsigned long *rip = NULL;
+    unsigned int idx;
     rip = (unsigned long *) (rsp + 0x98);
     print_color(RED, BLACK, "%s, ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", name, error_code, rsp, *rip);
+    if (error_code & 1u)
+        print_color(RED, BLACK, "Exception occurred during delivery of an even external to the program\n");
+    idx = (error_code & 0xfff8u) >> 3u;
+    if (error_code & 2u)
+        print_color(RED, BLACK, "Refers to a gate descriptor [%#04X] in the IDT", idx);
+    else {
+        if (error_code & 4u)
+            print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the LDT");
+        else
+            print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the GDT");
+    }
     hlt();
 }
 
@@ -93,7 +105,27 @@ void handle_general_protection(unsigned long rsp, unsigned long error_code) {
 }
 
 void handle_page_fault(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Page Fault[PF]", rsp, error_code);
+    unsigned long *rip = NULL;
+    unsigned long cr2 = 0;
+    __asm__ __volatile__ ("movq %%cr2, %0":"=r"(cr2)::"memory");
+    rip = (unsigned long *) (rsp + 0x98);
+    print_color(RED, BLACK, "Page Fault[PF], ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", error_code, rsp, *rip);
+    if (error_code & 1u)
+        print_color(RED, BLACK, "Page Not-Presented, ");
+    if (error_code & 2u)
+        print_color(RED, BLACK, "Write caused the fault, ");
+    else
+        print_color(RED, BLACK, "Read caused the fault, ");
+    if (error_code & 4u)
+        print_color(RED, BLACK, "User-mode access caused the fault, ");
+    else
+        print_color(RED, BLACK, "Supervisor-mode access caused the fault, ");
+    if (error_code & 8u)
+        print_color(RED, BLACK, "Set reserved bit caused the fault, ");
+    if (error_code & 16u)
+        print_color(RED, BLACK, "Instruction fetch caused the fault, ");
+    print_color(RED, BLACK, "CR2:%#018X\n", cr2);
+    hlt();
 }
 
 void handle_x87_FPU_floating_point_error(unsigned long rsp, unsigned long error_code) {
