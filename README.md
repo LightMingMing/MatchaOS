@@ -57,6 +57,11 @@ sh start.sh
 divide error
 ![DE](doc/image/DE.png)
 
+Page Fault : read not presented page
+![PF_read](doc/image/PF_read.png)
+Page Fault : write not presented page
+![PF_write](doc/image/PF_write.png)
+
 ## 参考资料
 1. [(参考书源代码) MINE操作系统](https://gitee.com/MINEOS_admin)
 2. [清华大学操作系统实验ucore_os_lab](https://github.com/chyyuu/ucore_os_lab)

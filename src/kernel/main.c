@@ -97,13 +97,15 @@ void Start_Kernel() {
 
     print_color(GREEN, BLACK, "Nice, very good!\n");
 
-    load_TR(8);
+    load_TR(8u);
     setup_TSS(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
               0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
     trap_init();
     // test
-    i = 1 / 0;
-    println("1/0 = %d", i);
+    // i = 1 / 0;
+    // println("1/0 = %d", i);
+    i = *(int *) 0xffff80000aa00000;
+    // *(int *) 0xffff80000aa00000 = 1;
 
     __asm__ __volatile__ ("hlt":: :);
 }
