@@ -4,6 +4,12 @@
 #include "lib/stdio.h"
 #include "trap/gate.h"
 #include "trap/trap.h"
+#include "mm/memory.h"
+
+extern char _text;
+extern char _etext;
+extern char _edata;
+extern char _end;
 
 void Start_Kernel() {
     // Linear Address of Frame Buffer
@@ -104,8 +110,71 @@ void Start_Kernel() {
     // test
     // i = 1 / 0;
     // println("1/0 = %d", i);
-    i = *(int *) 0xffff80000aa00000;
+    // i = *(int *) 0xffff80000aa00000;
     // *(int *) 0xffff80000aa00000 = 1;
 
+    p.x_position = 0;
+    p.y_position = 0;
+    p.cur_address = p.FB_address;
+
+    struct address_range_descriptor *map_point = NULL;
+    unsigned long total_memory = 0;
+    unsigned long total_pages = 0;
+    map_point = (struct address_range_descriptor *) 0xffff800000007e00;
+    for (i = 0; i < E820_MAX; i++) {
+        if (map_point->type == E820_ARM) {
+            total_memory += map_point->length_low;
+            total_memory += (unsigned long) map_point->length_high << 32u;
+        } else if (map_point->type == 0 || map_point->type > 3) {
+            mem_map.length = i;
+            break;
+        }
+        mem_map.map[i].addr = ((unsigned long) map_point->addr_high << 32u) + map_point->addr_low;
+        mem_map.map[i].length = ((unsigned long) map_point->length_high << 32u) + map_point->length_low;
+        mem_map.map[i].type = map_point->type;
+        map_point++;
+    }
+    for (i = 0; i < mem_map.length; i++) {
+        println("address: %#018lx  length: %#018x  type: %d", mem_map.map[i].addr,
+                mem_map.map[i].length, mem_map.map[i].type);
+        unsigned long start, end;
+        start = align_upper_2m(mem_map.map[i].addr);
+        end = align_lower_2m(mem_map.map[i].addr + mem_map.map[i].length);
+        if (mem_map.map[i].type == E820_ARM) {
+            if (end > start) {
+                total_pages += (end - start) >> PAGE_SHIFT_2M;
+            }
+        }
+    }
+    println("Total memory size: %uMB, total pages is: %u", total_memory >> 20u, total_pages);
+    mem_info.start_code = (unsigned long) &_text;
+    mem_info.end_code = (unsigned long) &_etext;
+    mem_info.end_data = (unsigned long) &_edata;
+    mem_info.end_brk = (unsigned long) &_end;
+    println("start_code: %u %#lx", _text, mem_info.start_code);
+    println("end_code  : %u %#lx", _etext, mem_info.end_code);
+    println("end_data  : %u %#lx", _edata, mem_info.end_data);
+    println("end_brk   : %u %#lx", _end, mem_info.end_brk);
+
+    total_memory = mem_map.map[mem_map.length - 1].addr + mem_map.map[mem_map.length - 1].length;
+
+    mem_info.bits_map = (unsigned long *) align_upper_4k(mem_info.end_brk);
+    mem_info.bits_size = total_memory >> PAGE_SHIFT_2M;
+    mem_info.bits_length = align_upper_byte((mem_info.bits_size + 7) / 8); // bytes
+    println("bits_map: %#018lx size:%u length:%u", mem_info.bits_map, mem_info.bits_size, mem_info.bits_length);
+    // TODO init bits map memory
+
+    mem_info.pages = (struct Page *) align_upper_4k(mem_info.bits_map + mem_info.bits_length);
+    mem_info.pages_size = total_memory >> PAGE_SHIFT_2M;
+    mem_info.pages_length = align_upper_byte(mem_info.pages_size * sizeof(struct Page)); // bytes
+    println("pages: %#018lx size:%u length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
+    // TODO init pages memory
+
+    mem_info.zones = (struct Zone *) align_upper_4k(mem_info.pages + mem_info.pages_length);
+    mem_info.zones_size = mem_map.length;
+    mem_info.zones_length = align_upper_byte(mem_info.zones_size * sizeof(struct Zone)); // bytes
+    println("zones: %#018lx size:%u length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
+    // TODO init zones memory
+    
     __asm__ __volatile__ ("hlt":: :);
 }
