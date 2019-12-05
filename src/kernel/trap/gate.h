@@ -13,7 +13,7 @@ extern struct gate_struct IDT_Table[];
 extern unsigned int TSS_Table[26];
 
 #define load_TR(idx)   \
-    __asm__ __volatile__ ("ltr  %%ax"::"a" (idx << 3u):"memory");
+    __asm__ __volatile__ ("ltr  %%ax"::"a" (idx << 3u):"memory")
 
 #define _set_gate(gate_selector_address, attr, ist, segment_offset)     \
     unsigned long _d0, _d1;                                             \
@@ -37,7 +37,7 @@ extern unsigned int TSS_Table[26];
                                 "3" ((unsigned long*)(segment_offset)), \
                                 "2" (0x8u << 16u),                      \
                                 "c" (ist)                               \
-                                :"memory");                             \
+                                :"memory")                              \
 
 
 inline void set_int_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
