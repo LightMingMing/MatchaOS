@@ -2,6 +2,7 @@
 // Created by 赵明明 on 2019/11/18.
 //
 #include "lib/stdio.h"
+#include "lib/x86.h"
 #include "trap/gate.h"
 #include "trap/trap.h"
 #include "mm/memory.h"
@@ -151,10 +152,10 @@ void Start_Kernel() {
     mem_info.end_code = (unsigned long) &_etext;
     mem_info.end_data = (unsigned long) &_edata;
     mem_info.end_brk = (unsigned long) &_end;
-    println("start_code: %u %#lx", _text, mem_info.start_code);
-    println("end_code  : %u %#lx", _etext, mem_info.end_code);
-    println("end_data  : %u %#lx", _edata, mem_info.end_data);
-    println("end_brk   : %u %#lx", _end, mem_info.end_brk);
+    println("start_code: %#lx", mem_info.start_code);
+    println("end_code  : %#lx", mem_info.end_code);
+    println("end_data  : %#lx", mem_info.end_data);
+    println("end_brk   : %#lx", mem_info.end_brk);
 
     total_memory = mem_map.map[mem_map.length - 1].addr + mem_map.map[mem_map.length - 1].length;
 
@@ -162,19 +163,22 @@ void Start_Kernel() {
     mem_info.bits_size = total_memory >> PAGE_SHIFT_2M;
     mem_info.bits_length = align_upper_byte((mem_info.bits_size + 7) / 8); // bytes
     println("bits_map: %#018lx size:%u length:%u", mem_info.bits_map, mem_info.bits_size, mem_info.bits_length);
-    // TODO init bits map memory
+    // init bits map memory
+    memset(mem_info.bits_map, 0xff, mem_info.bits_length);
 
     mem_info.pages = (struct Page *) align_upper_4k(mem_info.bits_map + mem_info.bits_length);
     mem_info.pages_size = total_memory >> PAGE_SHIFT_2M;
     mem_info.pages_length = align_upper_byte(mem_info.pages_size * sizeof(struct Page)); // bytes
     println("pages: %#018lx size:%u length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
-    // TODO init pages memory
+    // init pages memory
+    memset(mem_info.pages, 0x00, mem_info.pages_length);
 
     mem_info.zones = (struct Zone *) align_upper_4k(mem_info.pages + mem_info.pages_length);
     mem_info.zones_size = mem_map.length;
     mem_info.zones_length = align_upper_byte(mem_info.zones_size * sizeof(struct Zone)); // bytes
     println("zones: %#018lx size:%u length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
-    // TODO init zones memory
-    
+    // init zones memory
+    memset(mem_info.zones, 0x00, mem_info.zones_length);
+
     __asm__ __volatile__ ("hlt":: :);
 }
