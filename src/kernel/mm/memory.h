@@ -39,10 +39,10 @@ struct e820_memory_map mem_map = {0, {}};
 
 #define align_upper_2m(addr) (((unsigned long)addr + PAGE_SIZE_2M - 1u) & PAGE_MASK_2M)
 #define align_upper_4k(addr) (((unsigned long)addr + PAGE_SIZE_4K - 1u) & PAGE_MASK_4K)
-#define align_upper_byte(addr) (((unsigned long)addr + 7u) & (~7u))
+#define align_upper_byte(addr) (((unsigned long)addr + 7u) & (~7UL))
 #define align_lower_2m(addr) ((unsigned long)addr & PAGE_MASK_2M)
 #define align_lower_4k(addr) ((unsigned long)addr & PAGE_MASK_4K)
-#define align_lower_byte(addr) ((unsigned long)addr & (~7u))
+#define align_lower_byte(addr) ((unsigned long)addr & (~7UL))
 
 struct Zone {
     struct Page *pages;
