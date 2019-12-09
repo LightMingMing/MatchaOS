@@ -233,5 +233,20 @@ void Start_Kernel() {
         page_init(mem_info.pages + i, PG_PTable_Mapped | PG_Kernel_Init | PG_Active | PG_Kernel);
     }
 
+    unsigned long *global_cr3 = get_CR3();
+    print_color(INDIGO, BLACK, "global_cr3:   %#018lx\n", global_cr3);
+    print_color(INDIGO, BLACK, "*global_cr3:  %#018lx\n", *phy_to_vir(global_cr3) & (~0xFFUL));
+    print_color(INDIGO, BLACK, "**global_cr3: %#018lx\n", *phy_to_vir(*phy_to_vir(global_cr3) & (~0xFFUL)) & (~0xFFUL));
+
+
+    // *(int *) 0xffff80000aa00000 = 1; // Will print "Page Fault"
+    // clear PML4 Entry
+    for (i = 0; i < 10; i++) {
+        *(phy_to_vir(global_cr3) + i) = 0UL;
+    }
+    // *(int *) 0xffff80000aa00000 = 1; // Will not print "Page Fault". TODO Why ?
+    flush_TLB();
+    // *(int *) 0xffff80000aa00000 = 1; // will not print "Page Fault"
+
     __asm__ __volatile__ ("hlt":: :);
 }

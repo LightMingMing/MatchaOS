@@ -16,6 +16,22 @@ __res; })
 __asm__ __volatile__("hlt":: :); \
 })
 
+static inline unsigned long *get_CR3() {
+    unsigned long *tmp;
+    __asm__ __volatile__("movq %%cr3, %0":"=r"(tmp): :"memory");
+    return tmp;
+}
+
+// flush Translation Look-aside Buffer
+static inline void flush_TLB() {
+    unsigned long tmp;
+    __asm__ __volatile__ ("movq %%cr3, %0   \n\t"
+                          "movq %0, %%cr3   \n\t"
+    :"=r"(tmp)
+    :
+    :"memory");
+}
+
 static inline void *memset(void *addr, unsigned char c, uint64_t size) {
     int d0, d1;
     unsigned long tmp = c * 0x0101010101010101;
