@@ -40,15 +40,15 @@ extern unsigned int TSS_Table[26];
                                 :"memory")                              \
 
 
-inline void set_int_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
+static inline void set_int_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
     _set_gate(IDT_Table + int_vector, 0x8E, ist, handler_address); // attr(47~40): P=1, DPL=0, TYPE=E
 }
 
-inline void set_trap_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
+static inline void set_trap_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
     _set_gate(IDT_Table + int_vector, 0x8F, ist, handler_address); // attr(47~40): P=1, DPL=0, TYPE=F
 }
 
-inline void set_sys_trap_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
+static inline void set_sys_trap_gate(unsigned int int_vector, unsigned char ist, void *handler_address) {
     _set_gate(IDT_Table + int_vector, 0xEF, ist, handler_address); // attr(47~40): P=1, DPL=3, TYPE=F
 }
 
