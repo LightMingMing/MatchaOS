@@ -30,10 +30,14 @@ struct e820_memory_map {
 
 struct e820_memory_map mem_map = {0, {}};
 
+#define PAGE_OFFSET     (0xffff800000000000UL)
+
 #define PAGE_SHIFT_2M   21u
 #define PAGE_SHIFT_4K   12u
+
 #define PAGE_SIZE_2M    (1UL << PAGE_SHIFT_2M)
 #define PAGE_SIZE_4K    (1UL << PAGE_SHIFT_4K)
+
 #define PAGE_MASK_2M    (~(PAGE_SIZE_2M - 1))
 #define PAGE_MASK_4K    (~(PAGE_SIZE_4K - 1))
 
@@ -44,6 +48,9 @@ struct e820_memory_map mem_map = {0, {}};
 #define align_lower_4k(addr) ((unsigned long)addr & PAGE_MASK_4K)
 #define align_lower_byte(addr) ((unsigned long)addr & (~7UL))
 
+#define vir_to_phy(addr) ((unsigned long)addr - PAGE_OFFSET)
+#define phy_to_vir(addr) ((unsigned long*)((unsigned long)addr + PAGE_OFFSET))
+
 struct Zone {
     struct Page *pages;
     uint64_t pages_length;
@@ -52,6 +59,18 @@ struct Zone {
     uint64_t zone_end_addr;
     uint64_t zone_length;
 };
+
+// page attr
+#define PG_PTable_Mapped    (1U<<0U)
+#define PG_Kernel_Init      (1U<<1U)
+#define PG_Referenced       (1U<<2U)
+#define PG_Dirty            (1U<<3U)
+#define PG_Active           (1U<<4U)
+#define PG_Up_To_Date       (1U<<5U)
+#define PG_Device           (1U<<6U)
+#define PG_Kernel           (1U<<7U)
+#define PG_K_Share_To_U     (1U<<8U)
+#define PG_Slab             (1U<<9U)
 
 struct Page {
     struct Zone *zone;
@@ -78,5 +97,7 @@ struct Global_Memory_Descriptor {
 };
 
 struct Global_Memory_Descriptor mem_info = {};
+
+void page_init(struct Page *page, unsigned long flags);
 
 #endif //_MEMORY_H
