@@ -58,6 +58,9 @@ struct Zone {
     uint64_t zone_start_addr;
     uint64_t zone_end_addr;
     uint64_t zone_length;
+
+    uint64_t page_using_count;
+    uint64_t page_free_count;
 };
 
 // page attr
@@ -99,5 +102,7 @@ struct Global_Memory_Descriptor {
 struct Global_Memory_Descriptor mem_info = {};
 
 void page_init(struct Page *page, unsigned long flags);
+
+struct Page *alloc_pages(unsigned int num, unsigned long flags);
 
 #endif //_MEMORY_H

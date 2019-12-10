@@ -195,6 +195,8 @@ void Start_Kernel() {
         z->zone_length = end_addr - start_addr;
         z->pages = (struct Page *) (mem_info.pages + (start_addr >> PAGE_SHIFT_2M));
         z->pages_length = (end_addr - start_addr) >> PAGE_SHIFT_2M;
+        z->page_using_count = 0;
+        z->page_free_count = z->pages_length;
 
         // page int
         p = z->pages;
@@ -247,6 +249,17 @@ void Start_Kernel() {
     // *(int *) 0xffff80000aa00000 = 1; // Will not print "Page Fault". TODO Why ?
     flush_TLB();
     // *(int *) 0xffff80000aa00000 = 1; // will not print "Page Fault"
+
+    struct Page *page = NULL;
+    for (i = 0; i < 64; i++) {
+        page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
+        print_color(INDIGO, BLACK, "Page[%d] \tattr:%#018lx\taddr:%#018lx\t", i, page->attr,
+                    page->phy_addr);
+        if ((unsigned) i & 1u)
+            println("");
+    }
+    print_color(GREEN, BLACK, "mem_info.bits_map:%#018lx\n", *mem_info.bits_map);
+    print_color(GREEN, BLACK, "mem_info.bits_map:%#018lx\n", *(mem_info.bits_map + 1));
 
     __asm__ __volatile__ ("hlt":: :);
 }
