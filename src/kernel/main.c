@@ -183,8 +183,8 @@ void Start_Kernel() {
             continue;
         }
         start_addr = align_upper_2m(mem_map.map[i].addr);
-        end_addr = align_lower_2m(mem_map.map[i].addr + mem_map.map[i].length);
-        if (start_addr >= end_addr) {
+        end_addr = align_upper_2m(mem_map.map[i].addr + mem_map.map[i].length);
+        if (start_addr == end_addr) {
             continue;
         }
 
@@ -217,7 +217,7 @@ void Start_Kernel() {
     mem_info.zones_size = z_idx;
     mem_info.zones_length = align_upper_byte(z_idx * sizeof(struct Zone)); // bytes
 
-    mem_info.end_of_struct = align_lower_byte(mem_info.zones + mem_info.zones_length + sizeof(long) * 32);
+    mem_info.end_of_struct = align_upper_byte(mem_info.zones + mem_info.zones_length + sizeof(long) * 32);
 
     println("start_code   : %#lx", mem_info.start_code);
     println("end_code     : %#lx", mem_info.end_code);
@@ -229,7 +229,7 @@ void Start_Kernel() {
     println("zones: %#018lx size:%u length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
 
     int max_used_page = vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M;
-    for (i = 0; i <= max_used_page; i++) {
+    for (i = 0; i < max_used_page; i++) {
         page_init(mem_info.pages + i, PG_PTable_Mapped | PG_Kernel_Init | PG_Active | PG_Kernel);
     }
 
