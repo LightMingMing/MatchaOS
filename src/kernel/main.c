@@ -230,7 +230,7 @@ void Start_Kernel() {
     println("pages: %#018lx size:%u length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
     println("zones: %#018lx size:%u length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
 
-    int max_used_page = vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M;
+    unsigned int max_used_page = (vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M) + 1;
     for (i = 0; i < max_used_page; i++) {
         page_init(mem_info.pages + i, PG_PTable_Mapped | PG_Kernel_Init | PG_Active | PG_Kernel);
     }
