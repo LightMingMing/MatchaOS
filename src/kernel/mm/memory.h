@@ -7,6 +7,11 @@
 
 #include "../lib/defs.h"
 
+extern char _text;
+extern char _etext;
+extern char _edata;
+extern char _end;
+
 struct address_range_descriptor {
     uint32_t addr_low;
     uint32_t addr_high;
@@ -100,6 +105,8 @@ struct Global_Memory_Descriptor {
 };
 
 struct Global_Memory_Descriptor mem_info = {};
+
+void memory_init();
 
 void page_init(struct Page *page, unsigned long flags);
 

@@ -7,11 +7,6 @@
 #include "trap/trap.h"
 #include "mm/memory.h"
 
-extern char _text;
-extern char _etext;
-extern char _edata;
-extern char _end;
-
 void Start_Kernel() {
     // Linear Address of Frame Buffer
     int *address = (int *) 0xffff800000a00000;
@@ -118,148 +113,40 @@ void Start_Kernel() {
     p.y_position = 0;
     p.cur_address = p.FB_address;
 
-    struct address_range_descriptor *map_point = NULL;
-    unsigned long total_memory = 0;
-    unsigned long total_pages = 0;
-    map_point = (struct address_range_descriptor *) 0xffff800000007e00;
-    for (i = 0; i < E820_MAX; i++) {
-        if (map_point->type == E820_ARM) {
-            total_memory += map_point->length_low;
-            total_memory += (unsigned long) map_point->length_high << 32u;
-        } else if (map_point->type == 0 || map_point->type > 3) {
-            mem_map.length = i;
-            break;
-        }
-        mem_map.map[i].addr = ((unsigned long) map_point->addr_high << 32u) + map_point->addr_low;
-        mem_map.map[i].length = ((unsigned long) map_point->length_high << 32u) + map_point->length_low;
-        mem_map.map[i].type = map_point->type;
-        map_point++;
-    }
+    print_color(GREEN, BLACK, "Memory Init\n");
+    memory_init();
+
+    unsigned long total_available_memory = 0;
+    unsigned long total_available_pages = 0;
     for (i = 0; i < mem_map.length; i++) {
         println("address: %#018lx  length: %#018x  type: %d", mem_map.map[i].addr,
                 mem_map.map[i].length, mem_map.map[i].type);
-        unsigned long start, end;
-        start = align_upper_2m(mem_map.map[i].addr);
-        end = align_lower_2m(mem_map.map[i].addr + mem_map.map[i].length);
         if (mem_map.map[i].type == E820_ARM) {
-            if (end > start) {
-                total_pages += (end - start) >> PAGE_SHIFT_2M;
-            }
+            total_available_memory += mem_map.map[i].length;
+            unsigned long start = align_upper_2m(mem_map.map[i].addr);
+            unsigned long end = align_lower_2m(mem_map.map[i].addr + mem_map.map[i].length);
+            total_available_pages = (end - start) >> PAGE_SHIFT_2M;
         }
     }
-    println("Total memory size: %uMB, total pages is: %u", total_memory >> 20u, total_pages);
-    mem_info.start_code = (unsigned long) &_text;
-    mem_info.end_code = (unsigned long) &_etext;
-    mem_info.end_data = (unsigned long) &_edata;
-    mem_info.end_brk = (unsigned long) &_end;
-
-    total_memory = mem_map.map[mem_map.length - 1].addr + mem_map.map[mem_map.length - 1].length;
-
-    mem_info.bits_map = (unsigned long *) align_upper_4k(mem_info.end_brk);
-    mem_info.bits_size = total_memory >> PAGE_SHIFT_2M;
-    mem_info.bits_length = align_upper_byte((mem_info.bits_size + 7) / 8); // bytes
-    // init bits map memory
-    memset(mem_info.bits_map, 0xff, mem_info.bits_length);
-
-    mem_info.pages = (struct Page *) align_upper_4k(mem_info.bits_map + mem_info.bits_length);
-    mem_info.pages_size = total_memory >> PAGE_SHIFT_2M;
-    mem_info.pages_length = align_upper_byte(mem_info.pages_size * sizeof(struct Page)); // bytes
-    // init pages memory
-    memset(mem_info.pages, 0x00, mem_info.pages_length);
-
-    mem_info.zones = (struct Zone *) align_upper_4k(mem_info.pages + mem_info.pages_length);
-    mem_info.zones_size = mem_map.length;
-    mem_info.zones_length = align_upper_byte(mem_info.zones_size * sizeof(struct Zone)); // bytes
-    // init zones memory
-    memset(mem_info.zones, 0x00, mem_info.zones_length);
-
-    int z_idx = 0;
-    for (i = 0; i < mem_map.length; i++) {
-        unsigned long start_addr, end_addr;
-        struct Zone *z;
-        struct Page *p;
-
-        if (mem_map.map[i].type != E820_ARM) {
-            continue;
-        }
-        start_addr = align_upper_2m(mem_map.map[i].addr);
-        end_addr = align_upper_2m(mem_map.map[i].addr + mem_map.map[i].length);
-        if (start_addr == end_addr) {
-            continue;
-        }
-
-        // zone init
-        z = mem_info.zones + z_idx++;
-        z->zone_start_addr = start_addr;
-        z->zone_end_addr = end_addr;
-        z->zone_length = end_addr - start_addr;
-        z->pages = (struct Page *) (mem_info.pages + (start_addr >> PAGE_SHIFT_2M));
-        z->pages_length = (end_addr - start_addr) >> PAGE_SHIFT_2M;
-        z->page_using_count = 0;
-        z->page_free_count = z->pages_length;
-
-        // page int
-        p = z->pages;
-        for (j = 0; j < z->pages_length; j++, p++) {
-            p->zone = z;
-            p->attr = 0;
-            p->refcount = 0;
-            p->phy_addr = start_addr + PAGE_SIZE_2M * j;
-
-            *(mem_info.bits_map + ((p->phy_addr >> PAGE_SHIFT_2M) >> 6u)) ^=
-                    1UL << ((p->phy_addr >> PAGE_SHIFT_2M) & (64u - 1u));
-        }
-    }
-
-    mem_info.pages->zone = mem_info.zones;
-    mem_info.pages->attr = 0;
-    mem_info.pages->refcount = 0;
-    mem_info.pages->phy_addr = 0;
-
-    mem_info.zones_size = z_idx;
-    mem_info.zones_length = align_upper_byte(z_idx * sizeof(struct Zone)); // bytes
-
-    mem_info.end_of_struct = align_upper_byte(mem_info.zones + mem_info.zones_length + sizeof(long) * 32);
-
-    println("start_code   : %#lx", mem_info.start_code);
-    println("end_code     : %#lx", mem_info.end_code);
-    println("end_data     : %#lx", mem_info.end_data);
-    println("end_brk      : %#lx", mem_info.end_brk);
+    println("Total available memory size: %uMB, total available pages is: %u", total_available_memory >> 20u,
+            total_available_pages);
+    println("start_code   : %#lx\t end_code     : %#lx", mem_info.start_code, mem_info.end_code);
+    println("end_data     : %#lx\t end_brk      : %#lx", mem_info.end_data, mem_info.end_brk);
     println("end_of_struct: %#lx", mem_info.end_of_struct);
-    println("bits_map: %#018lx size:%u length:%u", mem_info.bits_map, mem_info.bits_size, mem_info.bits_length);
-    println("pages: %#018lx size:%u length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
-    println("zones: %#018lx size:%u length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
-
-    unsigned int max_used_page = (vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M) + 1;
-    for (i = 0; i < max_used_page; i++) {
-        page_init(mem_info.pages + i, PG_PTable_Mapped | PG_Kernel_Init | PG_Active | PG_Kernel);
-    }
-
-    unsigned long *global_cr3 = get_CR3();
-    print_color(INDIGO, BLACK, "global_cr3:   %#018lx\n", global_cr3);
-    print_color(INDIGO, BLACK, "*global_cr3:  %#018lx\n", *phy_to_vir(global_cr3) & (~0xFFUL));
-    print_color(INDIGO, BLACK, "**global_cr3: %#018lx\n", *phy_to_vir(*phy_to_vir(global_cr3) & (~0xFFUL)) & (~0xFFUL));
-
-
-    // *(int *) 0xffff80000aa00000 = 1; // Will print "Page Fault"
-    // clear PML4 Entry
-    for (i = 0; i < 10; i++) {
-        *(phy_to_vir(global_cr3) + i) = 0UL;
-    }
-    // *(int *) 0xffff80000aa00000 = 1; // Will not print "Page Fault". TODO Why ?
-    flush_TLB();
-    // *(int *) 0xffff80000aa00000 = 1; // will not print "Page Fault"
+    println("bits_map : %#018lx, size:%u, length:%u", mem_info.bits_map, mem_info.bits_size, mem_info.bits_length);
+    println("pages    : %#018lx, size:%u, length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
+    println("zones    : %#018lx, size:%u, length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
 
     struct Page *page = NULL;
     for (i = 0; i < 64; i++) {
         page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
-        print_color(INDIGO, BLACK, "Page[%d] \tattr:%#018lx\taddr:%#018lx\t", i, page->attr,
+        print_color(INDIGO, BLACK, "Page[%d] \tattr:%#018lx\taddr:%#018lx\t\t", i, page->attr,
                     page->phy_addr);
         if ((unsigned) i & 1u)
             println("");
     }
-    print_color(GREEN, BLACK, "mem_info.bits_map:%#018lx\n", *mem_info.bits_map);
-    print_color(GREEN, BLACK, "mem_info.bits_map:%#018lx\n", *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "*(mem_info.bits_map)  : %#018lx\n", *mem_info.bits_map);
+    print_color(GREEN, BLACK, "*(mem_info.bits_map+1): %#018lx\n", *(mem_info.bits_map + 1));
 
     __asm__ __volatile__ ("hlt":: :);
 }
