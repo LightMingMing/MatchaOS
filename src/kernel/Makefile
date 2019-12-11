@@ -37,4 +37,4 @@ $(bin)/kernel.bin : $(bin)/system
 
 .PHONY : clean
 clean :
-	rm $(bin)/*.o $(bin)/system $(bin)/kernel.bin
+	rm -f $(bin)/*.o $(bin)/system $(bin)/kernel.bin

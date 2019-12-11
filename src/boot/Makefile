@@ -14,4 +14,4 @@ $(bin)/loader.bin : loader.asm fat12.inc
 
 .PHONY : clean
 clean :
-	rm $(bin)/*.bin
+	rm -f $(bin)/*.bin
