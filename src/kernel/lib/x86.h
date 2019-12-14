@@ -7,14 +7,15 @@
 
 #include "defs.h"
 
+#define cli() __asm__ __volatile__ ("cli":::"memory")
+#define sti() __asm__ __volatile__ ("sti":::"memory")
+
 #define do_div(num, base) ({ \
 int __res; \
 __asm__ __volatile__("divq %%rcx":"=a" (num),"=d" (__res):"0" (num),"1" (0),"c" (base)); \
 __res; })
 
-#define hlt() ({\
-__asm__ __volatile__("hlt":: :); \
-})
+#define hlt() __asm__ __volatile__("hlt":: :)
 
 static inline unsigned long *get_CR3() {
     unsigned long *tmp;
@@ -52,6 +53,10 @@ static inline void *memset(void *addr, unsigned char c, uint64_t size) {
     :"a"(tmp), "q"(size), "0"(size / 8), "1"(addr)
     :"memory");
     return addr;
+}
+
+static inline void io_out8(unsigned short port, unsigned char value) {
+    __asm__ __volatile__("outb  %0, %%dx; mfence"::"a"(value), "d"(port):"memory");
 }
 
 #endif //_X86_H

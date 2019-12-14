@@ -204,6 +204,8 @@ exception_handling:
 	movq	FUNC(%rsp), %rdx
 	callq	*%rdx
 
+
+ENTRY(ret_from_intr)
 restore_all:
 	popq	%r15
 	popq	%r14

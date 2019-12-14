@@ -5,6 +5,7 @@
 #include "lib/x86.h"
 #include "trap/gate.h"
 #include "trap/trap.h"
+#include "trap/intr.h"
 #include "mm/memory.h"
 
 void Start_Kernel() {
@@ -147,6 +148,9 @@ void Start_Kernel() {
     }
     print_color(GREEN, BLACK, "*(mem_info.bits_map)  : %#018lx\n", *mem_info.bits_map);
     print_color(GREEN, BLACK, "*(mem_info.bits_map+1): %#018lx\n", *(mem_info.bits_map + 1));
+
+    intr_init();
+    while (1) {}
 
     __asm__ __volatile__ ("hlt":: :);
 }
