@@ -59,4 +59,10 @@ static inline void io_out8(unsigned short port, unsigned char value) {
     __asm__ __volatile__("outb  %0, %%dx; mfence"::"a"(value), "d"(port):"memory");
 }
 
+static inline unsigned char io_in8(unsigned short port) {
+    unsigned char tmp;
+    __asm__ __volatile__("inb  %%dx, %0; mfence":"=a"(tmp): "d"(port):"memory");
+    return tmp;
+}
+
 #endif //_X86_H
