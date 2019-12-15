@@ -31,7 +31,8 @@ sh start.sh
 > Mac中, 如果使用Qemu的话, 启动会出现问题, 暂时没有解决.
 
 ## 部分截图
-(boot)
+
+### (boot)
 
 启动boot
 ![boot](doc/image/boot.png)
@@ -39,7 +40,7 @@ sh start.sh
 加载并执行loader
 ![loader](doc/image/load_loader.png)
 
-(loader)
+### (loader)
 
 切换至保护模式
 ![switch_to_protect_mode](doc/image/switch_to_protect_mode.png)
@@ -47,7 +48,7 @@ sh start.sh
 切换至长模式
 ![switch_to_long_mode](doc/image/switch_to_long_mode.png)
 
-(kernel)
+### (kernel)
 
 配置了一套ASCII字体, 并实现格式化打印消息
 ![format_print_message](doc/image/print.png)   
@@ -61,6 +62,12 @@ Page Fault : read not presented page
 ![PF_read](doc/image/PF_read.png)
 Page Fault : write not presented page
 ![PF_write](doc/image/PF_write.png)
+
+memory init
+![memory_init](doc/image/mem_init.png)
+
+键盘中断, 按下并释放'matcha'键, 输出相应make code和break code
+![keyboard_interrupt](doc/image/kb_intr.png)
 
 ## 参考资料
 1. [(参考书源代码) MINE操作系统](https://gitee.com/MINEOS_admin)
