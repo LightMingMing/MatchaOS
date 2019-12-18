@@ -7,6 +7,7 @@
 #include "trap/trap.h"
 #include "trap/intr.h"
 #include "mm/memory.h"
+#include "proc/proc.h"
 
 void Start_Kernel() {
     // Linear Address of Frame Buffer
@@ -138,19 +139,21 @@ void Start_Kernel() {
     println("pages    : %#018lx, size:%u, length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
     println("zones    : %#018lx, size:%u, length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
 
-    struct Page *page = NULL;
-    for (i = 0; i < 64; i++) {
-        page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
-        print_color(INDIGO, BLACK, "Page[%d] \tattr:%#018lx\taddr:%#018lx\t\t", i, page->attr,
-                    page->phy_addr);
-        if ((unsigned) i & 1u)
-            println("");
-    }
+//    struct Page *page = NULL;
+//    for (i = 0; i < 64; i++) {
+//        page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
+//        print_color(INDIGO, BLACK, "Page[%d] \tattr:%#018lx\taddr:%#018lx\t\t", i, page->attr,
+//                    page->phy_addr);
+//        if ((unsigned) i & 1u)
+//            println("");
+//    }
     print_color(GREEN, BLACK, "*(mem_info.bits_map)  : %#018lx\n", *mem_info.bits_map);
     print_color(GREEN, BLACK, "*(mem_info.bits_map+1): %#018lx\n", *(mem_info.bits_map + 1));
 
     intr_init();
-    while (1) {}
+
+    print_color(GREEN, BLACK, "\nproc init\n");
+    proc_init();
 
     __asm__ __volatile__ ("hlt":: :);
 }

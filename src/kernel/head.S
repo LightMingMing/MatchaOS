@@ -1,3 +1,5 @@
+#include "linkage.h"
+
 .section .text
 
 .globl _start
@@ -36,7 +38,7 @@ entry64:
 	movq	%rax, %es
 	movq	%rax, %fs
 	movq	%rax, %ss
-	movq	$0xffff800000007E00, %rsp
+	movq	_stack_start(%rip), %rsp
 
 setup_IDT:
 	leaq	ignore_int(%rip), %rdx
@@ -105,6 +107,9 @@ ignore_int:
 
 int_msg:
 	.asciz	"Unknown interrupt or exception!\n"
+
+ENTRY(_stack_start)
+    .quad   init_proc_union + 32768
 
 // init page
 /*

@@ -9,7 +9,10 @@
 
 extern char _text;
 extern char _etext;
+extern char _data;
 extern char _edata;
+extern char _rodata;
+extern char _erodata;
 extern char _end;
 
 struct address_range_descriptor {
@@ -79,6 +82,26 @@ struct Zone {
 #define PG_Kernel           (1U<<7U)
 #define PG_K_Share_To_U     (1U<<8U)
 #define PG_Slab             (1U<<9U)
+
+// Page Map Level 4 Table
+typedef struct {
+    uint64_t pml4t;
+} pml4t_t;
+
+// Page Directory Point Table
+typedef struct {
+    uint64_t pdpt;
+} pdpt_t;
+
+// Page Directory Table
+typedef struct {
+    uint64_t pdt;
+} pdt_t;
+
+// Page Table
+typedef struct {
+    uint64_t pt;
+} pt_t;
 
 struct Page {
     struct Zone *zone;

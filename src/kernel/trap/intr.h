@@ -5,7 +5,7 @@
 #ifndef _INTR_H
 #define _INTR_H
 
-#include "linkage.h"
+#include "../linkage.h"
 
 #define IRQ_NAME(intr_vector)  IRQ##intr_vector##_interrupt(void)
 
