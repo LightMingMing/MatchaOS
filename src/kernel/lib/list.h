@@ -17,4 +17,11 @@ static inline void list_init(list_t *list) {
     list->next = list;
 }
 
+static inline void list_add_to_before(list_t *entry, list_t *new) {
+    new->next = entry;
+    new->prev = entry->prev;
+    entry->prev->next = new;
+    entry->prev = new;
+}
+
 #endif //_LIST_H

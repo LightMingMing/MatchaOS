@@ -10,12 +10,13 @@
 #include "../lib/list.h"
 #include "../trap/gate.h"
 #include "../lib/stdio.h"
+#include "reg.h"
 
 #define NR_CPU 4
 
 #define PROC_STACK_SIZE  32768 // 32768 Byte (32KB)
 
-#define PROC_RUNNABLE (1<<0)
+#define PROC_RUNNABLE (1u<<0u)
 #define PROC_INTERRUPTIBLE (1u<<1u)
 #define PROC_UNINTERRUPTIBLE (1u<<2u)
 
@@ -143,7 +144,7 @@ static inline struct proc_struct *get_current() {
             "pushq  %%rax               \n\t"   \
             "movq   %%rsp, %0           \n\t"   \
             "movq   %2, %%rsp           \n\t"   \
-            "movq   1f(%%rip), %%rax    \n\t"   \
+            "leaq   1f(%%rip), %%rax    \n\t"   \
             "movq   %%rax, %1           \n\t"   \
             "movq   %2, %%rsp           \n\t"   \
             "pushq  %3                  \n\t"   \
@@ -167,10 +168,12 @@ void __switch_to(struct proc_struct *prev, struct proc_struct *next) {
     __asm__ __volatile__("movq  %0, %%fs"::"a"(next->ctx->fs));
     __asm__ __volatile__("movq  %0, %%gs"::"a"(next->ctx->gs));
 
-    print_color(GREEN, BLACK, "prev->ctx->rsp0:%#018lx", prev->ctx->rsp0);
-    print_color(GREEN, BLACK, "next->ctx->rsp0:%#018lx", next->ctx->rsp0);
+    print_color(GREEN, BLACK, "prev->ctx->rsp0:%#018lx\n", prev->ctx->rsp0);
+    print_color(GREEN, BLACK, "next->ctx->rsp0:%#018lx\n", next->ctx->rsp0);
 }
 
 void proc_init();
+
+int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsigned long stack_end);
 
 #endif //_PROC_H

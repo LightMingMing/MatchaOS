@@ -111,7 +111,7 @@ void memory_init() {
     // *(int *) 0xffff80000aa00000 = 1; // Will print "Page Fault"
     // clear PML4 Entry
     for (int i = 0; i < 10; i++) {
-        *(phy_to_vir(global_cr3) + i) = 0UL;
+        // *(phy_to_vir(global_cr3) + i) = 0UL;
     }
     // *(int *) 0xffff80000aa00000 = 1; // Will not print "Page Fault". TODO Why ?
     flush_TLB();

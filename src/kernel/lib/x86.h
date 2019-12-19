@@ -17,6 +17,12 @@ __res; })
 
 #define hlt() __asm__ __volatile__("hlt":: :)
 
+#define container_of(ptr, type, member)   \
+({  \
+   typeof(((type *)0) -> member) *p = (ptr);\
+   (type*)((unsigned long)p - (unsigned long)&(((type *)0)->member));\
+})
+
 static inline unsigned long *get_CR3() {
     unsigned long *tmp;
     __asm__ __volatile__("movq %%cr3, %0":"=r"(tmp): :"memory");
@@ -53,6 +59,27 @@ static inline void *memset(void *addr, unsigned char c, uint64_t size) {
     :"a"(tmp), "q"(size), "0"(size / 8), "1"(addr)
     :"memory");
     return addr;
+}
+
+static inline void *memcpy(void *from, void *to, uint64_t size) {
+    int d0, d1, d2;
+    __asm__ __volatile("cld                 \n\t"
+                       "rep                 \n\t"
+                       "movsq               \n\t"
+                       "testb $4, %b3       \n\t"
+                       "je 1f               \n\t"
+                       "movsl               \n\t"
+                       "1: testb $2, %b3    \n\t"
+                       "je 2f               \n\t"
+                       "movsw               \n\t"
+                       "2: testb $1, %b3    \n\t"
+                       "je 3f               \n\t"
+                       "movsb               \n\t"
+                       "3:                  \n\t"
+    :"=&c"(d0), "=&D"(d1), "=&S"(d2)
+    :"q"(size), "0"(size / 8), "1"(to), "2"(from)
+    :"memory");
+    return to;
 }
 
 static inline void io_out8(unsigned short port, unsigned char value) {
