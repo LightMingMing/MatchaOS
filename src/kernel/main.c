@@ -12,7 +12,7 @@ void Start_Kernel() {
 
     test_format_print();
 
-    load_TR(8u);
+    load_TR(10U);
     setup_TSS(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
               0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
     trap_init();

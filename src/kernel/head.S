@@ -78,9 +78,9 @@ setup_TSS:
 	mov	$103, %ax
 	
 	leaq	GDT_Table(%rip), %rdi
-	movq	%rax, 64(%rdi)
+	movq	%rax, 80(%rdi)
 	shrq	$32, %rdx
-	movq	%rdx, 72(%rdi)
+	movq	%rdx, 88(%rdi)
 
 	movq	go_to_kernel(%rip), %rax
 	pushq	$0x08
@@ -183,11 +183,13 @@ GDT_Table:
 	.quad 0x0000000000000000 // NULL descriptor
 	.quad 0x0020980000000000 // KERNEL Code 64-bit Segment 0x08
 	.quad 0x0000920000000000 // KERNEL Data 64-bit Segment 0x10
-	.quad 0x0020f80000000000 // User   Code 64-bit Segment 0x18
-	.quad 0x0000f20000000000 // User   Data 64-bit Segment 0x20
-	.quad 0x00cf9a000000ffff // KERNEL Code 32-bit Segment 0x28
-	.quad 0x00cf92000000ffff // KERNEL Data 32-bit Segment 0x30
-	.fill 10, 8, 0
+	.quad 0x0000000000000000 // User   Code 32-bit Segment 0x18
+	.quad 0x0000000000000000 // User   Data 32-bit Segment 0x20
+	.quad 0x0020f80000000000 // User   Code 64-bit Segment 0x28
+	.quad 0x0000f20000000000 // User   Data 64-bit Segment 0x30
+	.quad 0x00cf9a000000ffff // KERNEL Code 32-bit Segment 0x38
+	.quad 0x00cf92000000ffff // KERNEL Data 32-bit Segment 0x40
+	.fill 10, 8, 0           // 10 ~ 11 TSS
 GDT_END:
 
 GDT_PTR:
