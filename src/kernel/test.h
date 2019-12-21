@@ -12,21 +12,21 @@ void test_format_print() {
     // Linear Address of Frame Buffer
     int *address = (int *) 0xffff800000a00000;
     int i, j, ch;
-    for (i = 0; i < 1440 * p.y_char_size; i++) {
+    for (i = 0; i < 1440 * pos.y_char_size; i++) {
         *((char *) address + 0) = (char) 0xff;
         *((char *) address + 1) = (char) 0x00;
         *((char *) address + 2) = (char) 0x00;
         *((char *) address + 3) = (char) 0x00;
         address++;
     }
-    for (i = 0; i < 1440 * p.y_char_size; i++) {
+    for (i = 0; i < 1440 * pos.y_char_size; i++) {
         *((char *) address + 0) = (char) 0x00;
         *((char *) address + 1) = (char) 0xff;
         *((char *) address + 2) = (char) 0x00;
         *((char *) address + 3) = (char) 0x00;
         address++;
     }
-    for (i = 0; i < 1440 * p.y_char_size; i++) {
+    for (i = 0; i < 1440 * pos.y_char_size; i++) {
         *((char *) address + 0) = (char) 0x00;
         *((char *) address + 1) = (char) 0x00;
         *((char *) address + 2) = (char) 0xff;
@@ -34,14 +34,14 @@ void test_format_print() {
         address++;
     }
 
-    p.x_position = 0;
-    p.y_position = 3;
-    p.cur_address = p.FB_address + p.y_position * p.y_char_size * p.x_resolution;
+    pos.x_position = 0;
+    pos.y_position = 3;
+    pos.cur_address = pos.FB_address + pos.y_position * pos.y_char_size * pos.x_resolution;
     print_color(GREEN, BLACK, "ascii table");
     for (i = 0; i < 4; i++) {
-        p.x_position = 0;
-        p.y_position++;
-        p.cur_address = p.FB_address + p.y_position * p.y_char_size * p.x_resolution + p.x_position * p.x_char_size;
+        pos.x_position = 0;
+        pos.y_position++;
+        pos.cur_address = pos.FB_address + pos.y_position * pos.y_char_size * pos.x_resolution + pos.x_position * pos.x_char_size;
         for (j = 0; j < 64; j++) {
             ch = (char) (64 * i + j);
             if (ch == '\n' || ch == '\t')
@@ -50,9 +50,9 @@ void test_format_print() {
         }
     }
 
-    p.x_position = 0;
-    p.y_position++;
-    p.cur_address = p.FB_address + p.y_position * p.y_char_size * p.x_resolution;
+    pos.x_position = 0;
+    pos.y_position++;
+    pos.cur_address = pos.FB_address + pos.y_position * pos.y_char_size * pos.x_resolution;
 
     print_color(GREEN, BLACK, "string\n");
     println("Hello, world");

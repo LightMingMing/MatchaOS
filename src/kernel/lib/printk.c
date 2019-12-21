@@ -214,68 +214,69 @@ v_print_fmt(void (*put_char)(int, void *, void *), void *put_data, void *other, 
 }
 
 void print_fmt(void (*put_char)(int, void *, void *), void *put_data, const char *fmt, ...) {
+    struct color c = {WHITE, BLACK};
     va_list ap;
     va_start(ap, fmt);
     v_print_fmt(put_char, put_data, &c, fmt, ap);
     va_end(ap);
 }
 
-static void new_line(struct position *pos) {
-    pos->x_position = 0;
-    pos->y_position++;
-    pos->cur_address = pos->FB_address + pos->y_position * pos->y_char_size * pos->x_resolution;
+static void new_line(struct position *p) {
+    p->x_position = 0;
+    p->y_position++;
+    p->cur_address = p->FB_address + p->y_position * p->y_char_size * p->x_resolution;
 }
 
-static void print_char(int ch, struct position *pos, struct color *color) {
+static void print_char(int ch, struct position *p, struct color *c) {
     int i, j, old;
     const int tab = 8;
-    unsigned int *address = pos->cur_address;
-    if (pos->x_pos_max <= 0)
-        pos->x_pos_max = pos->x_resolution / pos->x_char_size;
-    if (pos->y_pos_max <= 0)
-        pos->y_pos_max = pos->y_resolution / pos->y_char_size;
+    unsigned int *address = p->cur_address;
+    if (p->x_pos_max <= 0)
+        p->x_pos_max = p->x_resolution / p->x_char_size;
+    if (p->y_pos_max <= 0)
+        p->y_pos_max = p->y_resolution / p->y_char_size;
 
     if (ch == '\n') {
-        new_line(pos);
+        new_line(p);
     } else if (ch == '\t') {
-        old = pos->x_position;
-        pos->x_position = (int) (((unsigned int) pos->x_position) & ((unsigned int) -tab)) + tab;
-        if (pos->x_position >= pos->x_pos_max) {
-            new_line(pos);
+        old = p->x_position;
+        p->x_position = (int) (((unsigned int) p->x_position) & ((unsigned int) -tab)) + tab;
+        if (p->x_position >= p->x_pos_max) {
+            new_line(p);
         } else {
-            pos->cur_address += pos->x_char_size * (pos->x_position - old);
+            p->cur_address += p->x_char_size * (p->x_position - old);
         }
     } else {
-        for (i = 0; i < pos->y_char_size; i++) {
-            j = pos->x_char_size;
+        for (i = 0; i < p->y_char_size; i++) {
+            j = p->x_char_size;
             while (j-- > 0) {
                 if (font_ascii_medium[ch][i] & (1u << (unsigned int) j)) {
-                    *address = color->fd;
+                    *address = c->fd;
                 } else {
-                    *address = color->bd;
+                    *address = c->bd;
                 }
                 address++;
             }
-            address += (pos->x_resolution - pos->x_char_size);
+            address += (p->x_resolution - p->x_char_size);
         }
-        pos->x_position++;
-        if (pos->x_position == pos->x_pos_max) {
-            new_line(pos);
+        p->x_position++;
+        if (p->x_position == p->x_pos_max) {
+            new_line(p);
         } else {
-            pos->cur_address += pos->x_char_size;
+            p->cur_address += p->x_char_size;
         }
     }
 
-    if (pos->y_position == pos->y_pos_max) {
-        pos->y_position = 0;
-        pos->cur_address = pos->FB_address;
+    if (p->y_position == p->y_pos_max) {
+        p->y_position = 0;
+        p->cur_address = p->FB_address;
     }
 
     // clear for newline
-    if (pos->x_position == 0) {
-        address = pos->cur_address;
-        for (i = 0; i < pos->y_char_size; i++) {
-            for (j = 0; j < pos->x_resolution; j++) {
+    if (p->x_position == 0) {
+        address = p->cur_address;
+        for (i = 0; i < p->y_char_size; i++) {
+            for (j = 0; j < p->x_resolution; j++) {
                 *address = BLACK;
                 address++;
             }
@@ -284,11 +285,12 @@ static void print_char(int ch, struct position *pos, struct color *color) {
 
 }
 
-static void v_print(struct color *color, const char *fmt, va_list ap) {
-    v_print_fmt((void *) print_char, &p, color, fmt, ap);
+static void v_print(struct color *c, const char *fmt, va_list ap) {
+    v_print_fmt((void *) print_char, &pos, c, fmt, ap);
 }
 
 void print(const char *fmt, ...) {
+    struct color c = {WHITE, BLACK};
     va_list ap;
     va_start(ap, fmt);
     v_print(&c, fmt, ap);
@@ -296,6 +298,7 @@ void print(const char *fmt, ...) {
 }
 
 void println(const char *fmt, ...) {
+    struct color c = {WHITE, BLACK};
     va_list ap;
     va_start(ap, fmt);
     v_print(&c, fmt, ap);
@@ -304,9 +307,9 @@ void println(const char *fmt, ...) {
 }
 
 void print_color(unsigned fd, unsigned bd, const char *fmt, ...) {
-    struct color color = {fd, bd};
+    struct color c = {fd, bd};
     va_list ap;
     va_start(ap, fmt);
-    v_print(&color, fmt, ap);
+    v_print(&c, fmt, ap);
     va_end(ap);
 }

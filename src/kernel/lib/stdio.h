@@ -50,12 +50,10 @@ struct color {
     unsigned bd; // background color
 };
 
-struct position p = {1440, 900, 0, 0, 0, 0, 8, 18, (unsigned int *) 0xffff800000a00000,
-                     (unsigned int *) 0xffff800000a00000};
+struct position pos = {1440, 900, 0, 0, 0, 0, 8, 18, (unsigned int *) 0xffff800000a00000,
+                       (unsigned int *) 0xffff800000a00000};
 
-struct color c = {WHITE, BLACK};
-
-void print_fmt(void (*put_char)(int, void *, void *), void *put_data, const char *fmt, ...);
+// void print_fmt(void (*put_char)(int, void *, void *), void *put_data, const char *fmt, ...);
 
 void print(const char *fmt, ...);
 
