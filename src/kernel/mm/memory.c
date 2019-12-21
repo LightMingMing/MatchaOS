@@ -27,7 +27,10 @@ void memory_init() {
 
     mem_info.start_code = (unsigned long) &_text;
     mem_info.end_code = (unsigned long) &_etext;
+    mem_info.start_data = (unsigned long) &_data;
     mem_info.end_data = (unsigned long) &_edata;
+    mem_info.start_rodata = (unsigned long) &_rodata;
+    mem_info.end_rodata = (unsigned long) &_erodata;
     mem_info.end_brk = (unsigned long) &_end;
 
     total_memory = mem_map.map[mem_map.length - 1].addr + mem_map.map[mem_map.length - 1].length;
@@ -103,10 +106,7 @@ void memory_init() {
         page_init(mem_info.pages + i, PG_PTable_Mapped | PG_Kernel_Init | PG_Active | PG_Kernel);
     }
 
-    unsigned long *global_cr3 = get_CR3();
-    // print_color(INDIGO, BLACK, "global_cr3:   %#018lx\n", global_cr3);
-    // print_color(INDIGO, BLACK, "*global_cr3:  %#018lx\n", *phy_to_vir(global_cr3) & (~0xFFUL));
-    // print_color(INDIGO, BLACK, "**global_cr3: %#018lx\n", *phy_to_vir(*phy_to_vir(global_cr3) & (~0xFFUL)) & (~0xFFUL));
+    // unsigned long *global_cr3 = get_CR3();
 
     // *(int *) 0xffff80000aa00000 = 1; // Will print "Page Fault"
     // clear PML4 Entry

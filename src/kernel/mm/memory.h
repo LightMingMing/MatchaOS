@@ -123,7 +123,10 @@ struct Global_Memory_Descriptor {
     uint64_t zones_size;
     uint64_t zones_length;
 
-    uint64_t start_code, end_code, end_data, end_brk;
+    uint64_t start_code, end_code;
+    uint64_t start_data, end_data;
+    uint64_t start_rodata, end_rodata;
+    uint64_t end_brk;
     uint64_t end_of_struct;
 };
 
