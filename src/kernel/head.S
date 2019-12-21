@@ -151,25 +151,25 @@ _PML4E:
 .org 0x2000
 // Page Directory Pointer Table Entry, 物理地址: 0x102000
 _PDPTE:
-	.quad 0x103003
+	.quad 0x103007
 	.fill 511, 8, 0
 
 .org 0x3000
 // Page Directory Entry, 物理地址: 0x103000
 _PDE:
-	.quad 0x000083
-	.quad 0x200083
-	.quad 0x400083
-	.quad 0x600083
-	.quad 0x800083
-	.quad 0xe0000083
-	.quad 0xe0200083
-	.quad 0xe0400083
-	.quad 0xe0600083
-	.quad 0xe0800083
-	.quad 0xe0a00083
-	.quad 0xe0c00083
-	.quad 0xe0e00083
+	.quad 0x000087
+	.quad 0x200087
+	.quad 0x400087
+	.quad 0x600087
+	.quad 0x800087
+	.quad 0xe0000087
+	.quad 0xe0200087
+	.quad 0xe0400087
+	.quad 0xe0600087
+	.quad 0xe0800087
+	.quad 0xe0a00087
+	.quad 0xe0c00087
+	.quad 0xe0e00087
 	.fill 499, 8, 0
 // 这里使用2MB物理页, 不再需要PTE(Page Table Entry)
 
