@@ -10,7 +10,7 @@ $(bin)/head.o $(bin)/head.s : head.S
 	gcc -E $< > $(bin)/head.s
 	as --64 -o $(bin)/head.o $(bin)/head.s
 
-$(bin)/entry.o $(bin)/entry.s : trap/entry.S
+$(bin)/entry.o $(bin)/entry.s : entry.S
 	gcc -E $< > $(bin)/entry.s
 	as --64 -o $(bin)/entry.o $(bin)/entry.s
 

@@ -32,9 +32,39 @@ void display_tss_struct(struct tss_struct tss) {
     println("tss.ist2: %#018lx", tss.ist2);
 }
 
+extern void ret_system_call();
+
 unsigned long init(unsigned long args) {
+    regs_t *regs;
+    struct proc_struct *current = get_current();
+
     print_color(YELLOW, BLACK, "init proc is running, args:%#018lx\n", args);
+
+    current->ctx->rip = (unsigned long) ret_system_call;
+    current->ctx->rsp = (unsigned long) current + PROC_STACK_SIZE - sizeof(regs_t);
+    regs = (regs_t *) current->ctx->rsp;
+
+    __asm__ __volatile__("movq %1, %%rsp    \n\t"
+                         "pushq %2          \n\t"
+                         "jmp do_execve     \n\t"
+    ::"D"(regs), "m"(current->ctx->rsp), "m"(current->ctx->rip):"memory");
     return 1;
+}
+
+void user_level_func() {
+    print_color(YELLOW, BLACK, "user_level_func is running\n");
+    while (1);
+}
+
+unsigned long do_execve(regs_t *regs) {
+    regs->rdx = 0x800000; // rip
+    regs->rcx = 0xa00000; // rsp
+    regs->rax = 1;
+    regs->ds = 0;
+    regs->es = 0;
+    print_color(YELLOW, BLACK, "do_execve is running\n");
+    memcpy(user_level_func, (void *) 0x800000, 1024);
+    return 0;
 }
 
 void do_exit(unsigned long args) {
