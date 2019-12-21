@@ -148,7 +148,7 @@ void proc_init() {
     println("init_ctx:        %#018lx", &init_ctx);
     println("init_mm:         %#018lx", &init_mm);
 
-
+    wrmsr(0x174, KERNEL_CS);
     setup_TSS(init_ctx.rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
               init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
     init_tss[0].rsp0 = init_ctx.rsp0;
