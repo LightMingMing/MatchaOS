@@ -229,6 +229,38 @@ restore_all:
 	addq	$0x10, %rsp
 	iretq
 
+ENTRY(system_call)
+	subq    $0x38, %rsp
+	cld
+
+	pushq	%rax
+	movq	%es, %rax
+	pushq	%rax
+	movq	%ds, %rax
+	pushq	%rax
+	xorq	%rax, %rax
+
+	pushq	%rbp
+	pushq	%rdi
+	pushq	%rsi
+	pushq	%rdx
+	pushq	%rcx
+	pushq	%rbx
+	pushq	%r8
+	pushq	%r9
+	pushq	%r10
+	pushq	%r11
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+	movq    $0x10, %rdx
+	movq    %rdx, %ds
+	movq    %rdx, %es
+	movq    %rsp, %rdi
+
+	callq   system_call_func
+
 ENTRY(ret_system_call)
 	movq    %rax, 0x80(%rsp)
 	popq	%r15

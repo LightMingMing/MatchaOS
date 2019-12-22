@@ -172,6 +172,24 @@ void __switch_to(struct proc_struct *prev, struct proc_struct *next) {
     print_color(GREEN, BLACK, "next->ctx->rsp0:%#018lx\n", next->ctx->rsp0);
 }
 
+typedef unsigned long (*system_call_t)(regs_t *regs);
+
+unsigned long no_system_call(regs_t *regs) {
+    print_color(RED, BLACK, "no_system_call is calling, NR:%04x\n", regs->rax);
+    return -1;
+}
+
+unsigned long sys_printf(regs_t *regs) {
+    print_color(BLACK, WHITE, (char *) regs->rdi);
+    return 1;
+}
+
+system_call_t system_call_table[128] = {
+        [0] = no_system_call,
+        [1] = sys_printf,
+        [2 ... 127] = no_system_call
+};
+
 void proc_init();
 
 int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsigned long stack_end);

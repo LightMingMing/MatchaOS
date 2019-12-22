@@ -34,6 +34,8 @@ void display_tss_struct(struct tss_struct tss) {
 
 extern void ret_system_call();
 
+extern void system_call();
+
 unsigned long init(unsigned long args) {
     regs_t *regs;
     struct proc_struct *current = get_current();
@@ -52,8 +54,21 @@ unsigned long init(unsigned long args) {
 }
 
 void user_level_func() {
+    long ret = 0;
+    char* str = "Hello, World!\n";
     print_color(YELLOW, BLACK, "user_level_func is running\n");
+
+    __asm__ __volatile__ ("leaq sysexit_ret_addr(%%rip), %%rdx  \n\t"
+                          "movq %%rsp, %%rcx    \n\t"
+                          "sysenter             \n\t"
+                          "sysexit_ret_addr:    \n\t"
+    :"=a"(ret):"0"(1), "D"(str):"memory");
+    print_color(YELLOW, BLACK, "user_level_func proc called sysenter, ret: %ld\n", ret);
     while (1);
+}
+
+unsigned long system_call_func(regs_t *regs) {
+    return system_call_table[regs->rax](regs);
 }
 
 unsigned long do_execve(regs_t *regs) {
@@ -149,6 +164,8 @@ void proc_init() {
     println("init_mm:         %#018lx", &init_mm);
 
     wrmsr(0x174, KERNEL_CS);
+    wrmsr(0x175, current->ctx->rsp0);
+    wrmsr(0x176, (unsigned long) system_call);
     setup_TSS(init_ctx.rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
               init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
     init_tss[0].rsp0 = init_ctx.rsp0;
