@@ -152,7 +152,7 @@ void proc_init() {
     display_mm_struct(init_mm);
     display_proc_ctx(init_ctx);
     display_tss_struct(init_tss[0]);
-    println("get_current():   %#018lx", *current);
+    println("get_current():   %#018lx", current);
     println("init proc union: %#018lx", &init_proc_union);
     println("union.proc:      %#018lx", &init_proc_union.proc);
     println("&union.proc.ctx: %#018lx", &(init_proc_union.proc.ctx));
