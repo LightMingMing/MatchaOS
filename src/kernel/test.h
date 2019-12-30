@@ -41,7 +41,8 @@ void test_format_print() {
     for (i = 0; i < 4; i++) {
         pos.x_position = 0;
         pos.y_position++;
-        pos.cur_address = pos.FB_address + pos.y_position * pos.y_char_size * pos.x_resolution + pos.x_position * pos.x_char_size;
+        pos.cur_address =
+                pos.FB_address + pos.y_position * pos.y_char_size * pos.x_resolution + pos.x_position * pos.x_char_size;
         for (j = 0; j < 64; j++) {
             ch = (char) (64 * i + j);
             if (ch == '\n' || ch == '\t')
@@ -148,17 +149,23 @@ void test_get_CR3() {
 }
 
 void test_alloc_pages(int n) {
-    struct Page *page = NULL;
+    struct Page *head = NULL, *page = NULL;
 
-    print_color(GREEN, BLACK, "Before alloc page...\n");
+    print_color(GREEN, BLACK, "Before alloc pages...\n");
     print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
 
     for (int i = 0; i < n; i++) {
         page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
-        print_color(INDIGO, BLACK, "Page[%02d]  addr:%#018lx%c", i, page->phy_addr, i % 3 == 2 ? '\n' : '\t');
+        if (i == 0) head = page;
+        // print_color(INDIGO, BLACK, "Page[%02d]  addr:%#018lx%c", i, page->phy_addr, i % 3 == 2 ? '\n' : '\t');
     }
 
-    print_color(GREEN, BLACK, "%sAfter alloc %d page...\n", n % 3 == 0 ? "" : "\n", n);
+    // print_color(GREEN, BLACK, "%sAfter alloc %d pages...\n", n % 3 == 0 ? "" : "\n", n);
+    print_color(GREEN, BLACK, "After alloc %d pages...\n", n);
+    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
+
+    free_pages(head, n);
+    print_color(GREEN, BLACK, "After free %d pages...\n", n);
     print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
 }
 

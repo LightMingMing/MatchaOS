@@ -138,4 +138,6 @@ void page_init(struct Page *page, unsigned long flags);
 
 struct Page *alloc_pages(unsigned int num, unsigned long flags);
 
+void free_pages(struct Page *page, unsigned int num);
+
 #endif //_MEMORY_H

@@ -190,3 +190,17 @@ struct Page *alloc_pages(unsigned int num, unsigned long flags) {
     }
     return NULL;
 }
+
+void free_pages(struct Page *page, unsigned int num) {
+    if (page == NULL || num > 64) {
+        return;
+    }
+    for (unsigned int i = 0; i < num; i++, page++) {
+        *(mem_info.bits_map + ((page->phy_addr >> PAGE_SHIFT_2M) >> 6U)) &= ~(1UL
+                << ((page->phy_addr >> PAGE_SHIFT_2M) & (64UL - 1UL)));
+        page->attr = 0;
+        page->refcount = 0;
+        page->zone->page_free_count++;
+        page->zone->page_using_count--;
+    }
+}

@@ -23,7 +23,7 @@ void Start_Kernel() {
     memory_init();
     test_mem_info();
     test_get_CR3();
-//    test_alloc_pages(64);
+    test_alloc_pages(64);
 
     intr_init();
 
