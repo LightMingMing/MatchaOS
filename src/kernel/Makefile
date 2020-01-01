@@ -29,14 +29,17 @@ $(bin)/intr.o : trap/intr.c trap/intr.h
 $(bin)/memory.o : mm/memory.c mm/memory.h
 	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
 
+$(bin)/slab.o : mm/slab.c mm/slab.h
+	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+
 $(bin)/proc.o : proc/proc.c proc/proc.h
 	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
 
-$(bin)/main.o : main.c $(bin)/printk.o $(bin)/string.o
+$(bin)/main.o : main.c $(bin)/printk.o $(bin)/string.o test.h
 	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
 
-$(bin)/system : Kernel.lds $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/proc.o
-	ld -b elf64-x86-64 -z muldefs -o $@ $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/proc.o -T Kernel.lds
+$(bin)/system : Kernel.lds $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
+	ld -b elf64-x86-64 -z muldefs -o $@ $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o -T Kernel.lds
 
 $(bin)/kernel.bin : $(bin)/system
 	objcopy -I elf64-x86-64 -S -R ".eh_frame" -R ".comment" -O binary $< $@

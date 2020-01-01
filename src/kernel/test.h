@@ -169,4 +169,36 @@ void test_alloc_pages(int n) {
     print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
 }
 
+void test_kmalloc() {
+    unsigned long *chunk1 = NULL, *chunk2 = NULL;
+
+    print_color(GREEN, BLACK, "Before kmalloc : bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+    // test kmalloc small chunk
+    int chunk_size = 256; // 256 bytes
+    chunk1 = kmalloc(chunk_size);
+    chunk2 = kmalloc(chunk_size);
+    if (chunk2 - chunk1 != (chunk_size / 8)) {
+        print_color(RED, BLACK, "kmalloc error: chunk1 addr: %#018lx, chunk2 addr: %#018lx\n", chunk1, chunk2);
+    }
+    for (int i = 0; i < PAGE_SIZE_2M / chunk_size; i++) {
+        kmalloc(chunk_size);
+    }
+    print_color(GREEN, BLACK, "After kmalloc more then one page size small chunk: bits_map[0:1]= [%#018lx, %#018lx]\n",
+                *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+
+    // test kmalloc large chunk
+    chunk_size = 0x100000;  // 1MB
+    chunk1 = kmalloc(chunk_size);
+    chunk2 = kmalloc(chunk_size);
+    if (chunk2 - chunk1 != (chunk_size / 8)) {
+        print_color(RED, BLACK, "kmalloc error: chunk1 addr: %#018lx, chunk2 addr: %#018lx\n", chunk1, chunk2);
+    }
+    kmalloc(chunk_size);
+    print_color(GREEN, BLACK, "After kmalloc more then one page size large chunk: bits_map[0:1]= [%#018lx, %#018lx]\n",
+                *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+}
+
 #endif //_TEST_H

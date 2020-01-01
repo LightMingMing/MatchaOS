@@ -5,6 +5,7 @@
 #include "trap/trap.h"
 #include "trap/intr.h"
 #include "mm/memory.h"
+#include "mm/slab.h"
 #include "proc/proc.h"
 #include "test.h"
 
@@ -24,6 +25,9 @@ void Start_Kernel() {
     test_mem_info();
     test_get_CR3();
     test_alloc_pages(64);
+
+    slab_init();
+    test_kmalloc();
 
     intr_init();
 
