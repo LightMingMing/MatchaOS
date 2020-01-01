@@ -4,6 +4,11 @@ SHELL = /bin/bash
 
 bin = ../../bin
 
+objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
+          $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
+
+gcc_compile = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+
 all : $(bin)/kernel.bin
 
 $(bin)/head.o $(bin)/head.s : head.S
@@ -15,31 +20,31 @@ $(bin)/entry.o $(bin)/entry.s : entry.S
 	as --64 -o $(bin)/entry.o $(bin)/entry.s
 
 $(bin)/printk.o : lib/printk.c lib/stdio.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/string.o : lib/string.c lib/string.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/trap.o : trap/trap.c trap/trap.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/intr.o : trap/intr.c trap/intr.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/memory.o : mm/memory.c mm/memory.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/slab.o : mm/slab.c mm/slab.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/proc.o : proc/proc.c proc/proc.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
 $(bin)/main.o : main.c $(bin)/printk.o $(bin)/string.o test.h
-	gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+	$(gcc_compile)
 
-$(bin)/system : Kernel.lds $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
-	ld -b elf64-x86-64 -z muldefs -o $@ $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o -T Kernel.lds
+$(bin)/system : Kernel.lds $(objects)
+	ld -b elf64-x86-64 -z muldefs -o $@ $(objects) -T Kernel.lds
 
 $(bin)/kernel.bin : $(bin)/system
 	objcopy -I elf64-x86-64 -S -R ".eh_frame" -R ".comment" -O binary $< $@
