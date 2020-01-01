@@ -35,4 +35,6 @@ void slab_init();
 
 void *kmalloc(unsigned long size);
 
+int kfree(void * chunk_addr);
+
 #endif //_SLAB_H

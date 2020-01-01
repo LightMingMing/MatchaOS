@@ -181,3 +181,59 @@ void *kmalloc(unsigned long size) {
     print_color(RED, BLACK, "kmalloc error: no available memory\n");
     return NULL;
 }
+
+int kfree(void *chunk_addr) {
+    struct Slab *head = NULL, *slab = NULL;
+    struct Slab_cache *cache = NULL;
+    void *page_addr = (void *) ((unsigned long) chunk_addr & PAGE_MASK_2M);
+
+    for (int i = 0; i < 16; i++) {
+        cache = &kmalloc_cache[i];
+        slab = head = cache->cache_pool;
+        for (;;) {
+            if (slab->vir_addr == page_addr) {
+                unsigned int chunk_idx = (chunk_addr - page_addr) / cache->size;
+                if (!(*(slab->color_map + (chunk_idx >> 6UL)) & (1UL << (chunk_idx & 63UL)))) {
+                    print_color(RED, BLACK, "kfree error: the chunk %#018lx is not referenced", chunk_addr);
+                    return 0;
+                }
+                *(slab->color_map + (chunk_idx >> 6UL)) ^= 1UL << (chunk_idx & 63UL);
+
+                slab->free_count++;
+                slab->using_count--;
+
+                cache->total_free++;
+                cache->total_using--;
+
+                if (slab->using_count == 0 && cache->total_free > slab->color_count * 3 / 2 &&
+                    slab != cache->cache_pool) {
+                    unsigned long *tmp_color_map = slab->color_map;
+
+                    list_delete(&slab->list);
+                    cache->total_free -= slab->color_count;
+
+                    memset(slab->color_map, 0, slab->color_length);
+                    slab->color_count = 0;
+                    slab->color_length = 0;
+                    slab->color_map = NULL;
+
+                    free_pages(slab->page, 1);
+                    slab->page = NULL;
+                    slab->vir_addr = NULL;
+
+                    if (cache->size > 0x200) { // 1KB ~ 1M
+                        kfree(slab);
+                        kfree(tmp_color_map);
+                    }
+                }
+                return 1;
+            }
+            if ((slab = container_of((&slab->list)->next, struct Slab, list)) == head) {
+                break;
+            }
+
+        }
+    }
+    print_color(RED, BLACK, "kfree error: the chunk %#018lx is not exist", chunk_addr);
+    return 0;
+}

@@ -171,9 +171,12 @@ void test_alloc_pages(int n) {
 
 void test_kmalloc() {
     unsigned long *chunk1 = NULL, *chunk2 = NULL;
+    unsigned long *chunk = NULL, *chunk3, *chunk4, *chunk5, *chunk6;
 
     print_color(GREEN, BLACK, "Before kmalloc : bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
                 *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "total free: %d, total using: %d\n", kmalloc_cache[3].total_free,
+                kmalloc_cache[3].total_using);
     // test kmalloc small chunk
     int chunk_size = 256; // 256 bytes
     chunk1 = kmalloc(chunk_size);
@@ -182,23 +185,64 @@ void test_kmalloc() {
         print_color(RED, BLACK, "kmalloc error: chunk1 addr: %#018lx, chunk2 addr: %#018lx\n", chunk1, chunk2);
     }
     for (int i = 0; i < PAGE_SIZE_2M / chunk_size; i++) {
-        kmalloc(chunk_size);
+        chunk = kmalloc(chunk_size);
     }
+    print_color(YELLOW, BLACK, "chunk1 addr: %#018lx\n", chunk1);
+    print_color(YELLOW, BLACK, "chunk  addr: %#018lx\n", chunk);
     print_color(GREEN, BLACK, "After kmalloc more then one page size small chunk: bits_map[0:1]= [%#018lx, %#018lx]\n",
                 *mem_info.bits_map,
                 *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "total free: %d, total using: %d\n", kmalloc_cache[3].total_free,
+                kmalloc_cache[3].total_using);
+    for (int i = 0; i < PAGE_SIZE_2M / chunk_size; i++) {
+        kfree((unsigned long *) ((unsigned char *) chunk1 + i * chunk_size));
+    }
+    kfree(chunk);
+    kfree(chunk - chunk_size / 8);
+
+    print_color(GREEN, BLACK, "After kfree: total free=%d, total using: %d\n", kmalloc_cache[3].total_free,
+                kmalloc_cache[3].total_using);
 
     // test kmalloc large chunk
     chunk_size = 0x100000;  // 1MB
     chunk1 = kmalloc(chunk_size);
     chunk2 = kmalloc(chunk_size);
+    chunk3 = kmalloc(chunk_size);
+    chunk4 = kmalloc(chunk_size);
+    chunk5 = kmalloc(chunk_size);
+    chunk6 = kmalloc(chunk_size);
     if (chunk2 - chunk1 != (chunk_size / 8)) {
         print_color(RED, BLACK, "kmalloc error: chunk1 addr: %#018lx, chunk2 addr: %#018lx\n", chunk1, chunk2);
     }
-    kmalloc(chunk_size);
     print_color(GREEN, BLACK, "After kmalloc more then one page size large chunk: bits_map[0:1]= [%#018lx, %#018lx]\n",
                 *mem_info.bits_map,
                 *(mem_info.bits_map + 1));
+
+    kfree(chunk6);
+    kfree(chunk5);
+    kfree(chunk4);
+    if (kmalloc_cache[15].total_free != 3) {
+        print_color(RED, BLACK, "After kfree three 1MB size chunks: total free=%d, total using: %d\n",
+                    kmalloc_cache[15].total_free,
+                    kmalloc_cache[15].total_using);
+    }
+    kfree(chunk3); // free a slab, total_free should equals 2.
+    if (kmalloc_cache[15].total_free != 2) {
+        print_color(RED, BLACK, "After kfree four 1MB size chunks: total free=%d, total using: %d\n",
+                    kmalloc_cache[15].total_free,
+                    kmalloc_cache[15].total_using);
+    }
+    kfree(chunk2);
+    kfree(chunk1);
+
+    if ((chunk = kmalloc(chunk_size)) != chunk1) {
+        print_color(RED, BLACK, "Kfree error: chunk addr is %#018lx, chunk1 addr is %#018lx\n", chunk, chunk1);
+    }
+    if ((chunk = kmalloc(chunk_size)) != chunk2) {
+        print_color(RED, BLACK, "Kfree error: chunk addr is %#018lx, chunk2 addr is %#018lx\n", chunk, chunk2);
+    }
+    kfree(chunk1);
+    kfree(chunk2);
 }
 
 #endif //_TEST_H

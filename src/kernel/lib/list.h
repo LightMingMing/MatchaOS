@@ -5,6 +5,8 @@
 #ifndef _LIST_H
 #define _LIST_H
 
+#include "defs.h"
+
 struct list {
     struct list *prev;
     struct list *next;
@@ -22,6 +24,13 @@ static inline void list_add_to_before(list_t *entry, list_t *new) {
     new->prev = entry->prev;
     entry->prev->next = new;
     entry->prev = new;
+}
+
+static inline void list_delete(list_t *entry) {
+    entry->prev->next = entry->next;
+    entry->next->prev = entry->prev;
+    entry->prev = NULL;
+    entry->prev = NULL;
 }
 
 #endif //_LIST_H
