@@ -245,4 +245,40 @@ void test_kmalloc() {
     kfree(chunk2);
 }
 
+void *test_ctor(void *vir_addr, unsigned long arg) {}
+
+void *test_dtor(void *vir_addr, unsigned long arg) {}
+
+void test_create_and_destroy_slab_cache() {
+    struct Slab_cache *cache = NULL;
+    struct Slab *slab = NULL;
+
+    cache = slab_cache_create(8, test_ctor, test_dtor);
+    print_color(GREEN, BLACK, "create a slab cache\n");
+    print_color(GREEN, BLACK, "slab_cache->size=        %d\n", cache->size);
+    print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
+    print_color(GREEN, BLACK, "slab_cache->total_free=  %d\n", cache->total_free);
+    print_color(GREEN, BLACK, "slab_cache->ctor=        %#018lx\n", cache->ctor);
+    print_color(GREEN, BLACK, "slab_cache->dtor=        %#018lx\n", cache->dtor);
+
+    slab = cache->cache_pool;
+    print_color(GREEN, BLACK, "slab->page->phy_addr= %#018lx\n", slab->page->phy_addr);
+    print_color(GREEN, BLACK, "slab->using_count=    %d\n", slab->using_count);
+    print_color(GREEN, BLACK, "slab->free_count=     %d\n", slab->free_count);
+    print_color(GREEN, BLACK, "slab->colormap=       %#018lx\n", *slab->color_map);
+    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+
+    slab_cache_destroy(cache);
+    print_color(GREEN, BLACK, "After destroy\n");
+    print_color(GREEN, BLACK, "slab_cache->size=        %d\n", cache->size);
+    print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
+    print_color(GREEN, BLACK, "slab_cache->total_free=  %d\n", cache->total_free);
+    print_color(GREEN, BLACK, "slab_cache->ctor=        %#018lx\n", cache->ctor);
+    print_color(GREEN, BLACK, "slab_cache->dtor=        %#018lx\n", cache->dtor);
+    print_color(GREEN, BLACK, "*slab_cache->cache_pool= %#018lx\n", cache->cache_pool);
+    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+}
+
 #endif //_TEST_H

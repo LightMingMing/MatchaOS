@@ -28,6 +28,7 @@ void Start_Kernel() {
 
     slab_init();
     test_kmalloc();
+    test_create_and_destroy_slab_cache();
 
     intr_init();
 

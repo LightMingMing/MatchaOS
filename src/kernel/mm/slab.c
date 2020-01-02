@@ -237,3 +237,91 @@ int kfree(void *chunk_addr) {
     print_color(RED, BLACK, "kfree error: the chunk %#018lx is not exist", chunk_addr);
     return 0;
 }
+
+struct Slab_cache *slab_cache_create(unsigned long size,
+                                     void *(*ctor)(void *, unsigned long),
+                                     void *(*dtor)(void *, unsigned long)) {
+    struct Slab_cache *cache = NULL;
+    struct Slab *slab = NULL;
+
+    // slab_cache
+    cache = kmalloc(sizeof(struct Slab_cache));
+    if (cache == NULL) {
+        print_color(RED, BLACK, "slab_cache_create error: kmalloc Slab_cache == null\n");
+        return NULL;
+    }
+    cache->size = (size + sizeof(long) - 1) & (~(sizeof(long) - 1));
+    cache->total_using = 0;
+    cache->total_free = 0;
+    cache->ctor = ctor;
+    cache->dtor = dtor;
+
+    // slab
+    slab = kmalloc(sizeof(struct Slab));
+    if (slab == NULL) {
+        print_color(RED, BLACK, "slab_cache_create error: kmalloc slab == null\n");
+        kfree(cache);
+        return NULL;
+    }
+    list_init(&slab->list);
+    slab->using_count = 0;
+    slab->free_count = PAGE_SIZE_2M / cache->size;
+    cache->cache_pool = slab;
+
+    // slab->page
+    slab->page = alloc_pages(1, PG_Kernel);
+    if (slab->page == NULL) {
+        print_color(RED, BLACK, "slab_cache_create error: alloc pages == NULL\n");
+        kfree(slab);
+        kfree(cache);
+        return NULL;
+    }
+    slab->vir_addr = phy_to_vir(slab->page->phy_addr);
+
+    // slab->color_map
+    slab->color_count = slab->free_count;
+    slab->color_length = ((slab->color_count + sizeof(long) * 8 - 1) >> 6UL) << 3UL; // in bytes
+    slab->color_map = kmalloc(slab->color_length);
+    if (slab->color_map == NULL) {
+        print_color(RED, BLACK, "slab_cache_create error: kmalloc color_map == null\n");
+        free_pages(slab->page, 1);
+        kfree(slab);
+        kfree(cache);
+        return NULL;
+    }
+    memset(slab->color_map, 0xff, slab->color_length);
+    for (unsigned int i = 0; i < slab->color_count; i++) {
+        *(slab->color_map + (i >> 6UL)) ^= 1UL << (i & 63UL);
+    }
+    cache->total_free = slab->free_count;
+
+    return cache;
+}
+
+int slab_cache_destroy(struct Slab_cache *cache) {
+    struct Slab *head = NULL, *slab = NULL, *next = NULL;
+
+    if (cache->total_using != 0) {
+        print_color(RED, BLACK, "can't destroy: slab_cache->total_using != 0");
+        return 0;
+    }
+    head = slab = cache->cache_pool;
+    for (;;) {
+        next = container_of(&slab->list, struct Slab, list);
+
+        list_delete(&slab->list);
+        free_pages(slab->page, 1);
+        kfree(slab->color_map);
+        kfree(slab);
+        memset(slab, 0, sizeof(struct Slab));
+
+        if (next == head || next == NULL) {
+            break;
+        }
+        slab = next;
+    }
+
+    kfree(cache);
+    memset(cache, 0, sizeof(struct Slab_cache));
+    return 1;
+}
