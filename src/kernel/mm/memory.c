@@ -4,6 +4,7 @@
 
 #include "memory.h"
 #include "../lib/x86.h"
+#include "../lib/bit.h"
 
 static void init_mem_map() {
     struct address_range_descriptor *map_point = NULL;
@@ -86,8 +87,7 @@ void memory_init() {
             p->refcount = 0;
             p->phy_addr = start_addr + PAGE_SIZE_2M * j;
 
-            *(mem_info.bits_map + ((p->phy_addr >> PAGE_SHIFT_2M) >> 6u)) ^=
-                    1UL << ((p->phy_addr >> PAGE_SHIFT_2M) & (64u - 1u));
+            reset(mem_info.bits_map, p->phy_addr >> PAGE_SHIFT_2M);
         }
     }
 
@@ -121,8 +121,7 @@ void memory_init() {
 
 void page_init(struct Page *page, unsigned long flags) {
     if (!page->attr) {
-        *(mem_info.bits_map + ((page->phy_addr >> PAGE_SHIFT_2M) >> 6u)) |=
-                1UL << ((page->phy_addr >> PAGE_SHIFT_2M) & (64UL - 1UL));
+        set(mem_info.bits_map, page->phy_addr >> PAGE_SHIFT_2M);
         page->attr = flags;
         page->refcount++;
         page->zone->page_free_count--;
@@ -132,8 +131,7 @@ void page_init(struct Page *page, unsigned long flags) {
         page->attr |= flags;
         page->refcount++;
     } else {
-        *(mem_info.bits_map + ((page->phy_addr >> PAGE_SHIFT_2M) >> 6u)) |=
-                1UL << ((page->phy_addr >> PAGE_SHIFT_2M) & (64UL - 1UL));
+        set(mem_info.bits_map, page->phy_addr >> PAGE_SHIFT_2M);
         page->attr |= flags;
     }
 }
@@ -196,8 +194,7 @@ void free_pages(struct Page *page, unsigned int num) {
         return;
     }
     for (unsigned int i = 0; i < num; i++, page++) {
-        *(mem_info.bits_map + ((page->phy_addr >> PAGE_SHIFT_2M) >> 6U)) &= ~(1UL
-                << ((page->phy_addr >> PAGE_SHIFT_2M) & (64UL - 1UL)));
+        reset(mem_info.bits_map, page->phy_addr >> PAGE_SHIFT_2M);
         page->attr = 0;
         page->refcount = 0;
         page->zone->page_free_count++;

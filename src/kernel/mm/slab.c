@@ -6,6 +6,7 @@
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 #include "memory.h"
+#include "../lib/bit.h"
 
 struct Slab *kmalloc_create(unsigned long size) {
     struct Page *page = NULL;
@@ -40,7 +41,7 @@ struct Slab *kmalloc_create(unsigned long size) {
             memset(slab->color_map, 0xff, slab->color_length);
 
             for (unsigned int i = 0; i < slab->color_count; i++) {
-                *(slab->color_map + (i >> 6UL)) ^= (1UL << (i & 63UL));
+                reset(slab->color_map, i);
             }
             return slab;
         case 0x400:     // 1KB
@@ -67,7 +68,7 @@ struct Slab *kmalloc_create(unsigned long size) {
             slab->color_map = (unsigned long *) kmalloc(slab->color_length);
             memset(slab->color_map, 0xff, slab->color_length);
             for (unsigned int i = 0; i < slab->color_count; i++) {
-                *(slab->color_map + (i >> 6UL)) ^= 1UL << (i & 63UL);
+                reset(slab->color_map, i);
             }
             return slab;
         default:
@@ -99,7 +100,7 @@ void slab_init() {
         slab->color_length = ((slab->free_count + sizeof(unsigned long) * 8 - 1) >> 6UL) << 3UL;
         memset(slab->color_map, 0xff, slab->color_length);
         for (unsigned int j = 0; j < slab->color_count; j++) {
-            *(slab->color_map + (j >> 6UL)) ^= 1UL << ((j & 63UL));
+            reset(slab->color_map, j);
         }
 
         cache->size = size;
@@ -167,8 +168,8 @@ void *kmalloc(unsigned long size) {
             i += 63;
             continue;
         }
-        if (!(*(slab->color_map + (i >> 6U)) & (1UL << (i & 63UL)))) {
-            *(slab->color_map + (i >> 6U)) |= (1UL << (i & 63UL));
+        if (!get(slab->color_map, i)) {
+            set(slab->color_map, i);
             slab->free_count--;
             slab->using_count++;
 
@@ -193,11 +194,11 @@ int kfree(void *chunk_addr) {
         for (;;) {
             if (slab->vir_addr == page_addr) {
                 unsigned int chunk_idx = (chunk_addr - page_addr) / cache->size;
-                if (!(*(slab->color_map + (chunk_idx >> 6UL)) & (1UL << (chunk_idx & 63UL)))) {
+                if (!get(slab->color_map, chunk_idx)) {
                     print_color(RED, BLACK, "kfree error: the chunk %#018lx is not referenced", chunk_addr);
                     return 0;
                 }
-                *(slab->color_map + (chunk_idx >> 6UL)) ^= 1UL << (chunk_idx & 63UL);
+                reset(slab->color_map, chunk_idx);
 
                 slab->free_count++;
                 slab->using_count--;
@@ -291,7 +292,7 @@ struct Slab_cache *slab_cache_create(unsigned long size,
     }
     memset(slab->color_map, 0xff, slab->color_length);
     for (unsigned int i = 0; i < slab->color_count; i++) {
-        *(slab->color_map + (i >> 6UL)) ^= 1UL << (i & 63UL);
+        reset(slab->color_map, i);
     }
     cache->total_free = slab->free_count;
 
