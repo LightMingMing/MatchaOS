@@ -210,7 +210,7 @@ int kfree(void *chunk_addr) {
                     slab != cache->cache_pool) {
                     unsigned long *tmp_color_map = slab->color_map;
 
-                    list_delete(&slab->list);
+                    list_del(&slab->list);
                     cache->total_free -= slab->color_count;
 
                     memset(slab->color_map, 0, slab->color_length);
@@ -319,7 +319,7 @@ int slab_cache_destroy(struct Slab_cache *cache) {
     for (;;) {
         next = container_of((&slab->list)->next, struct Slab, list);
 
-        list_delete(&slab->list);
+        list_del(&slab->list);
         free_pages(slab->page, 1);
         kfree(slab->color_map);
         kfree(slab);
@@ -396,7 +396,7 @@ int slab_free(struct Slab_cache *cache, void *addr, unsigned long arg) {
             }
 
             if (slab->using_count == 0 && cache->total_free > slab->color_count * 3 / 2) {
-                list_delete(&slab->list);
+                list_del(&slab->list);
                 free_pages(slab->page, 1);
                 kfree(slab->color_map);
                 kfree(slab);
