@@ -55,7 +55,7 @@ unsigned long init(unsigned long args) {
 
 void user_level_func() {
     long ret = 0;
-    char* str = "Hello, World!\n";
+    char *str = "Hello, World!\n";
     print_color(YELLOW, BLACK, "user_level_func is running\n");
 
     __asm__ __volatile__ ("leaq sysexit_ret_addr(%%rip), %%rdx  \n\t"
@@ -184,7 +184,7 @@ int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsign
     struct Page *page = NULL;
 
     print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bits_map);
-    page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
+    page = alloc_pages(1, PG_PTable_Mapped | PG_Kernel);
     print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bits_map);
 
     proc = (struct proc_struct *) phy_to_vir(page->phy_addr);

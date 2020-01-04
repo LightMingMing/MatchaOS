@@ -81,7 +81,6 @@ struct Slab *kmalloc_create(unsigned long size) {
 void slab_init() {
     struct Slab *slab = NULL;
     struct Slab_cache *cache = NULL;
-    unsigned long page_nr;
     unsigned long temp_addr = mem_info.end_of_struct;
 
     cache = kmalloc_cache;
@@ -112,15 +111,22 @@ void slab_init() {
                                  (~(sizeof(long) - 1UL));
     }
 
-    page_nr = vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M;
-    for (int i = vir_to_phy(temp_addr) >> PAGE_SHIFT_2M; i <= page_nr; i++) {
+    int start = (int) (vir_to_phy(temp_addr) >> PAGE_SHIFT_2M) + 1;
+    int page_nr = vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M;
+    for (unsigned int i = start; i <= page_nr; i++) {
         struct Page *page = mem_info.pages + i;
+        page->zone->page_free_count--;
+        page->zone->page_using_count++;
+        set(mem_info.bits_map, i);
         page_init(page, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
     }
 
     page_nr += 1;
     for (int i = 0; i < 16; i++, page_nr++) {
         struct Page *page = mem_info.pages + page_nr;
+        page->zone->page_free_count--;
+        page->zone->page_using_count++;
+        set(mem_info.bits_map, page_nr);
         page_init(page, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
 
         kmalloc_cache[i].cache_pool->vir_addr = phy_to_vir(page->phy_addr);

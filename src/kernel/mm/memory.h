@@ -74,14 +74,9 @@ struct Zone {
 // page attr
 #define PG_PTable_Mapped    (1U<<0U)
 #define PG_Kernel_Init      (1U<<1U)
-#define PG_Referenced       (1U<<2U)
-#define PG_Dirty            (1U<<3U)
-#define PG_Active           (1U<<4U)
-#define PG_Up_To_Date       (1U<<5U)
-#define PG_Device           (1U<<6U)
-#define PG_Kernel           (1U<<7U)
-#define PG_K_Share_To_U     (1U<<8U)
-#define PG_Slab             (1U<<9U)
+#define PG_Device           (1U<<2U)
+#define PG_Kernel           (1U<<3U)
+#define PG_Shared           (1U<<4U)
 
 // Page Map Level 4 Table
 typedef struct {
@@ -134,7 +129,7 @@ struct Global_Memory_Descriptor mem_info = {};
 
 void memory_init();
 
-void page_init(struct Page *page, unsigned long flags);
+int page_init(struct Page *page, unsigned long flags);
 
 struct Page *alloc_pages(unsigned int num, unsigned long flags);
 

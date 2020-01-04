@@ -152,10 +152,14 @@ void test_alloc_pages(int n) {
     struct Page *head = NULL, *page = NULL;
 
     print_color(GREEN, BLACK, "Before alloc pages...\n");
+    for (int i = 0; i < mem_info.zones_size; i++) {
+        print_color(GREEN, BLACK, "zone[%d] using_count:%d", i, mem_info.zones[i].page_using_count);
+        print_color(GREEN, BLACK, " free_count:%d\n", mem_info.zones[i].page_free_count);
+    }
     print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
 
     for (int i = 0; i < n; i++) {
-        page = alloc_pages(1, PG_PTable_Mapped | PG_Active | PG_Kernel);
+        page = alloc_pages(1, PG_PTable_Mapped | PG_Kernel);
         if (i == 0) head = page;
         // print_color(INDIGO, BLACK, "Page[%02d]  addr:%#018lx%c", i, page->phy_addr, i % 3 == 2 ? '\n' : '\t');
     }
@@ -167,6 +171,10 @@ void test_alloc_pages(int n) {
     free_pages(head, n);
     print_color(GREEN, BLACK, "After free %d pages...\n", n);
     print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
+    for (int i = 0; i < mem_info.zones_size; i++) {
+        print_color(GREEN, BLACK, "zone[%d] using_count:%d", i, mem_info.zones[i].page_using_count);
+        print_color(GREEN, BLACK, " free_count:%d\n", mem_info.zones[i].page_free_count);
+    }
 }
 
 void test_kmalloc() {

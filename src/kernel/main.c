@@ -22,11 +22,12 @@ void Start_Kernel() {
 //    test_write_PF();
 
     memory_init();
+    slab_init();
+
     test_mem_info();
     test_get_CR3();
     test_alloc_pages(64);
 
-    slab_init();
     test_kmalloc();
     test_create_and_destroy_slab_cache();
 

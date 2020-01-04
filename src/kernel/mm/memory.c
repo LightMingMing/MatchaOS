@@ -103,7 +103,11 @@ void memory_init() {
 
     unsigned int max_used_page = (vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M) + 1;
     for (int i = 0; i < max_used_page; i++) {
-        page_init(mem_info.pages + i, PG_PTable_Mapped | PG_Kernel_Init | PG_Active | PG_Kernel);
+        struct Page *p = mem_info.pages + i;
+        p->zone->page_free_count--;
+        p->zone->page_using_count++;
+        set(mem_info.bits_map, i);
+        page_init(p, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
     }
 
     // unsigned long *global_cr3 = get_CR3();
@@ -119,21 +123,12 @@ void memory_init() {
 
 }
 
-void page_init(struct Page *page, unsigned long flags) {
-    if (!page->attr) {
-        set(mem_info.bits_map, page->phy_addr >> PAGE_SHIFT_2M);
-        page->attr = flags;
+int page_init(struct Page *page, unsigned long flags) {
+    page->attr |= flags;
+    if (!page->refcount || (page->attr & PG_Shared)) {
         page->refcount++;
-        page->zone->page_free_count--;
-        page->zone->page_using_count++;
-    } else if ((page->attr & PG_Referenced) || (page->attr & PG_K_Share_To_U) || (flags & PG_Referenced) ||
-               (flags & PG_K_Share_To_U)) {
-        page->attr |= flags;
-        page->refcount++;
-    } else {
-        set(mem_info.bits_map, page->phy_addr >> PAGE_SHIFT_2M);
-        page->attr |= flags;
     }
+    return 1;
 }
 
 struct Page *alloc_pages(unsigned int num, unsigned long flags) {
@@ -181,7 +176,10 @@ struct Page *alloc_pages(unsigned int num, unsigned long flags) {
         if (page > 0) {
             for (int j = 0; j < num; j++) {
                 struct Page *p = mem_info.pages + page + j;
+                p->zone->page_free_count--;
+                p->zone->page_using_count++;
                 page_init(p, flags);
+                set(mem_info.bits_map, page + j);
             }
             return mem_info.pages + page;
         }
