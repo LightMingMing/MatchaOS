@@ -144,16 +144,7 @@ void *kmalloc(unsigned long size) {
     }
     slab = cache->cache_pool;
 
-    if (cache->total_free != 0) {
-        // 索引有空闲块的Slab
-        for (;;) {
-            if (slab->free_count == 0) {
-                slab = container_of((&slab->list)->next, struct Slab, list);
-            } else {
-                break;
-            }
-        }
-    } else {
+    if (cache->total_free == 0) {
         // 创建一个新的slab
         slab = kmalloc_create(cache->size);
         if (slab == NULL) {
@@ -162,6 +153,15 @@ void *kmalloc(unsigned long size) {
         }
         cache->total_free += slab->free_count;
         list_add_to_before(&cache->cache_pool->list, &slab->list);
+    } else {
+        // 索引有空闲块的Slab
+        for (;;) {
+            if (slab->free_count == 0) {
+                slab = container_of((&slab->list)->next, struct Slab, list);
+            } else {
+                break;
+            }
+        }
     }
     for (unsigned int i = 0; i < slab->color_count; i++) {
         if (*(slab->color_map + (i >> 6U)) == 0xffffffffffffffff) {
@@ -312,12 +312,12 @@ int slab_cache_destroy(struct Slab_cache *cache) {
     struct Slab *head = NULL, *slab = NULL, *next = NULL;
 
     if (cache->total_using != 0) {
-        print_color(RED, BLACK, "can't destroy: slab_cache->total_using != 0");
+        print_color(RED, BLACK, "can't destroy: slab_cache->total_using != 0\n");
         return 0;
     }
     head = slab = cache->cache_pool;
     for (;;) {
-        next = container_of(&slab->list, struct Slab, list);
+        next = container_of((&slab->list)->next, struct Slab, list);
 
         list_delete(&slab->list);
         free_pages(slab->page, 1);
@@ -334,4 +334,82 @@ int slab_cache_destroy(struct Slab_cache *cache) {
     kfree(cache);
     memset(cache, 0, sizeof(struct Slab_cache));
     return 1;
+}
+
+void *slab_malloc(struct Slab_cache *cache, unsigned long arg) {
+    struct Slab *slab = NULL;
+
+    if (cache->total_free == 0) {
+        slab = slab_create(cache->size);
+        if (slab == NULL) {
+            print_color(RED, BLACK, "slab_malloc error: slab = NULL\n");
+            return NULL;
+        }
+        list_add_to_before(&cache->cache_pool->list, &slab->list);
+        cache->total_free += slab->free_count;
+    } else {
+        slab = cache->cache_pool;
+        for (;;) {
+            if (slab->free_count == 0) {
+                slab = container_of((&slab->list)->next, struct Slab, list);
+            } else {
+                break;
+            }
+        }
+    }
+
+    for (unsigned int i = 0; i < slab->color_count; i++) {
+        if (*(slab->color_map + (i >> 6UL)) == 0xffffffffffffffff) {
+            i += 63;
+            continue;
+        }
+        if (!get(slab->color_map, i)) {
+            set(slab->color_map, i);
+            slab->using_count++;
+            slab->free_count--;
+
+            cache->total_using++;
+            cache->total_free--;
+
+            void *chunk_addr = slab->vir_addr + cache->size * i;
+            return cache->ctor == NULL ? chunk_addr : cache->ctor(chunk_addr, arg);
+        }
+    }
+    return NULL;
+}
+
+int slab_free(struct Slab_cache *cache, void *addr, unsigned long arg) {
+    struct Slab *head = NULL, *slab = NULL;
+
+    head = slab = cache->cache_pool;
+    for (;;) {
+        if (slab->vir_addr <= addr && addr < slab->vir_addr + PAGE_SIZE_2M) {
+            unsigned int idx = (addr - slab->vir_addr) / cache->size;
+            slab->using_count--;
+            slab->free_count++;
+            reset(slab->color_map, idx);
+
+            cache->total_using--;
+            cache->total_free++;
+            if (cache->dtor != NULL) {
+                cache->dtor((char *) slab->vir_addr + cache->size * idx, arg);
+            }
+
+            if (slab->using_count == 0 && cache->total_free > slab->color_count * 3 / 2) {
+                list_delete(&slab->list);
+                free_pages(slab->page, 1);
+                kfree(slab->color_map);
+                kfree(slab);
+
+                cache->total_free -= slab->color_count;
+                memset(slab, 0, sizeof(struct Slab));
+            }
+            return 1;
+        }
+        if ((slab = container_of((&slab->list)->next, struct Slab, list)) == head) {
+            break;
+        }
+    }
+    print_color(RED, BLACK, "slab_free error: the chunk %018lx is not exist\n", addr);
+    return 0;
 }

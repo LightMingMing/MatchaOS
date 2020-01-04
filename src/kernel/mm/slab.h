@@ -29,9 +29,9 @@ struct Slab_cache {
 
     struct Slab *cache_pool;
 
-    void *(*ctor)(void *vir_addr, unsigned long arg);
+    void *(*ctor)(void *chunk, unsigned long arg);
 
-    void *(*dtor)(void *vir_addr, unsigned long arg);
+    void *(*dtor)(void *chunk, unsigned long arg);
 };
 
 struct Slab_cache kmalloc_cache[16];
@@ -47,5 +47,9 @@ struct Slab_cache *slab_cache_create(unsigned long size,
                                      void *(*dtor)(void *vir_addr, unsigned long arg));
 
 int slab_cache_destroy(struct Slab_cache *cache);
+
+void *slab_malloc(struct Slab_cache *cache, unsigned long arg);
+
+int slab_free(struct Slab_cache *cache, void *addr, unsigned long arg);
 
 #endif //_SLAB_H

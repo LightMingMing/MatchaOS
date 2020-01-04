@@ -245,15 +245,21 @@ void test_kmalloc() {
     kfree(chunk2);
 }
 
-void *test_ctor(void *vir_addr, unsigned long arg) {}
+void *test_ctor(void *chunk, unsigned long arg) {
+    *((unsigned long *) chunk) = arg;
+    return chunk;
+}
 
-void *test_dtor(void *vir_addr, unsigned long arg) {}
+void *test_dtor(void *chunk, unsigned long arg) {
+    *((unsigned long *) chunk) = arg;
+    return chunk;
+}
 
 void test_create_and_destroy_slab_cache() {
     struct Slab_cache *cache = NULL;
     struct Slab *slab = NULL;
 
-    cache = slab_cache_create(8, test_ctor, test_dtor);
+    cache = slab_cache_create(0x100000, test_ctor, test_dtor);
     print_color(GREEN, BLACK, "create a slab cache\n");
     print_color(GREEN, BLACK, "slab_cache->size=        %d\n", cache->size);
     print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
@@ -268,6 +274,26 @@ void test_create_and_destroy_slab_cache() {
     print_color(GREEN, BLACK, "slab->colormap=       %#018lx\n", *slab->color_map);
     print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
                 *(mem_info.bits_map + 1));
+
+    void *chunk[6] = {};
+    for (int i = 0; i < 6; i++) {
+        chunk[i] = slab_malloc(cache, 1);
+        print_color(GREEN, BLACK, "slab_malloc chunk=%#018lx, arg=%d\n", chunk[i], *(unsigned long *) chunk[i]);
+    }
+    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
+    print_color(GREEN, BLACK, "slab_cache->total_free=  %d\n", cache->total_free);
+
+    int ret = 0;
+    for (int i = 0; i < 6; i++) {
+        ret = slab_free(cache, chunk[i], 0);
+        print_color(GREEN, BLACK, "slab_free ret=%d, arg=%d\n", ret, *(unsigned long *) chunk[i]);
+    }
+    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
+                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
+    print_color(GREEN, BLACK, "slab_cache->total_free=  %d\n", cache->total_free);
 
     slab_cache_destroy(cache);
     print_color(GREEN, BLACK, "After destroy\n");
