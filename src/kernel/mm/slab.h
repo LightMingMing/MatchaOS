@@ -8,6 +8,7 @@
 #include "../lib/list.h"
 #include "../lib/defs.h"
 #include "memory.h"
+#include "../lib/x86.h"
 
 struct Slab {
     list_t list;
@@ -21,6 +22,10 @@ struct Slab {
     uint64_t color_count;   // free_count + using_count
     unsigned long *color_map;
 };
+
+static inline struct Slab *slab_next(struct Slab *slab) {
+    return container_of(list_next(&slab->list), struct Slab, list);
+}
 
 struct Slab_cache {
     uint64_t size;          // chunk size in slabs

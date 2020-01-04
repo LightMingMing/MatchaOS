@@ -157,7 +157,7 @@ void *kmalloc(unsigned long size) {
         // 索引有空闲块的Slab
         for (;;) {
             if (slab->free_count == 0) {
-                slab = container_of((&slab->list)->next, struct Slab, list);
+                slab = slab_next(slab);
             } else {
                 break;
             }
@@ -229,7 +229,7 @@ int kfree(void *chunk_addr) {
                 }
                 return 1;
             }
-            if ((slab = container_of((&slab->list)->next, struct Slab, list)) == head) {
+            if ((slab = slab_next(slab)) == head) {
                 break;
             }
 
@@ -317,7 +317,7 @@ int slab_cache_destroy(struct Slab_cache *cache) {
     }
     head = slab = cache->cache_pool;
     for (;;) {
-        next = container_of((&slab->list)->next, struct Slab, list);
+        next = slab_next(slab);
 
         list_del(&slab->list);
         free_pages(slab->page, 1);
@@ -351,7 +351,7 @@ void *slab_malloc(struct Slab_cache *cache, unsigned long arg) {
         slab = cache->cache_pool;
         for (;;) {
             if (slab->free_count == 0) {
-                slab = container_of((&slab->list)->next, struct Slab, list);
+                slab = slab_next(slab);
             } else {
                 break;
             }
@@ -406,7 +406,7 @@ int slab_free(struct Slab_cache *cache, void *addr, unsigned long arg) {
             }
             return 1;
         }
-        if ((slab = container_of((&slab->list)->next, struct Slab, list)) == head) {
+        if ((slab = slab_next(slab)) == head) {
             break;
         }
     }
