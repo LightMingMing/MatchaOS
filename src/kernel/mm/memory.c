@@ -158,7 +158,7 @@ struct Page *alloc_pages(unsigned int num, unsigned long flags) {
             unsigned long *p = mem_info.bits_map + (j >> 6U);
             unsigned long shift = j & 63U;
             for (unsigned int k = shift; k < 64; k++) {
-                if (!(((*p >> k) | (*(p + 1) << (64U - k))) &
+                if (!((k ? ((*p >> k) | (*(p + 1) << (64U - k))) : *p) &
                       (num == 64 ? 0xffffffffffffffffUL : (1UL << num) - 1))) {
                     page = j + k - shift;
                     break;
@@ -168,7 +168,7 @@ struct Page *alloc_pages(unsigned int num, unsigned long flags) {
                 break;
             }
             for (unsigned int k = 0; k < shift; k++) {
-                if (!(((*(p + 1) >> k) | (*(p + 2) << (64U - k))) &
+                if (!((k ? ((*(p + 1) >> k) | (*(p + 2) << (64U - k))) : *(p + 1)) &
                       (num == 64 ? 0xffffffffffffffffUL : (1UL << num) - 1))) {
                     page = j + k - shift + 64;
                     break;
