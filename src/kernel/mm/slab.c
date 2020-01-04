@@ -239,6 +239,44 @@ int kfree(void *chunk_addr) {
     return 0;
 }
 
+struct Slab *slab_create(unsigned long size) {
+    struct Slab *slab = NULL;
+
+    slab = kmalloc(sizeof(struct Slab));
+    if (slab == NULL) {
+        print_color(RED, BLACK, "slab_create error: slab == null\n");
+        return NULL;
+    }
+    list_init(&slab->list);
+    slab->using_count = 0;
+    slab->free_count = PAGE_SIZE_2M / size;
+
+    // slab->page
+    slab->page = alloc_pages(1, PG_Kernel);
+    if (slab->page == NULL) {
+        print_color(RED, BLACK, "slab_create error: alloc pages == NULL\n");
+        kfree(slab);
+        return NULL;
+    }
+    slab->vir_addr = phy_to_vir(slab->page->phy_addr);
+
+    // slab->color_map
+    slab->color_count = slab->free_count;
+    slab->color_length = (slab->color_count + sizeof(long) * 8 - 1) >> 6UL << 3UL;
+    slab->color_map = kmalloc(slab->color_length);
+    if (slab->color_map == NULL) {
+        print_color(RED, BLACK, "slab_create error: color_map == null\n");
+        free_pages(slab->page, 1);
+        kfree(slab);
+        return NULL;
+    }
+    memset(slab->color_map, 0xff, slab->color_length);
+    for (unsigned int i = 0; i < slab->color_count; i++) {
+        reset(slab->color_map, i);
+    }
+    return slab;
+}
+
 struct Slab_cache *slab_cache_create(unsigned long size,
                                      void *(*ctor)(void *, unsigned long),
                                      void *(*dtor)(void *, unsigned long)) {
@@ -258,42 +296,13 @@ struct Slab_cache *slab_cache_create(unsigned long size,
     cache->dtor = dtor;
 
     // slab
-    slab = kmalloc(sizeof(struct Slab));
+    slab = slab_create(size);
     if (slab == NULL) {
-        print_color(RED, BLACK, "slab_cache_create error: kmalloc slab == null\n");
+        print_color(RED, BLACK, "slab_cache_create error: slab == null\n");
         kfree(cache);
         return NULL;
     }
-    list_init(&slab->list);
-    slab->using_count = 0;
-    slab->free_count = PAGE_SIZE_2M / cache->size;
     cache->cache_pool = slab;
-
-    // slab->page
-    slab->page = alloc_pages(1, PG_Kernel);
-    if (slab->page == NULL) {
-        print_color(RED, BLACK, "slab_cache_create error: alloc pages == NULL\n");
-        kfree(slab);
-        kfree(cache);
-        return NULL;
-    }
-    slab->vir_addr = phy_to_vir(slab->page->phy_addr);
-
-    // slab->color_map
-    slab->color_count = slab->free_count;
-    slab->color_length = ((slab->color_count + sizeof(long) * 8 - 1) >> 6UL) << 3UL; // in bytes
-    slab->color_map = kmalloc(slab->color_length);
-    if (slab->color_map == NULL) {
-        print_color(RED, BLACK, "slab_cache_create error: kmalloc color_map == null\n");
-        free_pages(slab->page, 1);
-        kfree(slab);
-        kfree(cache);
-        return NULL;
-    }
-    memset(slab->color_map, 0xff, slab->color_length);
-    for (unsigned int i = 0; i < slab->color_count; i++) {
-        reset(slab->color_map, i);
-    }
     cache->total_free = slab->free_count;
 
     return cache;
