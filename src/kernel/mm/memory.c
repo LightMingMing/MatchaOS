@@ -5,6 +5,8 @@
 #include "memory.h"
 #include "../lib/x86.h"
 #include "../lib/bit.h"
+#include "../lib/stdio.h"
+#include "slab.h"
 
 static void init_mem_map() {
     struct address_range_descriptor *map_point = NULL;
@@ -36,23 +38,23 @@ void memory_init() {
 
     total_memory = mem_map.map[mem_map.length - 1].addr + mem_map.map[mem_map.length - 1].length;
 
-    mem_info.bits_map = (unsigned long *) align_upper_4k(mem_info.end_brk);
-    mem_info.bits_size = total_memory >> PAGE_SHIFT_2M;
-    mem_info.bits_length = align_upper_byte((mem_info.bits_size + 7) / 8); // bytes
+    mem_info.bit_map = (unsigned long *) align_upper_4k(mem_info.end_brk);
+    mem_info.bit_count = total_memory >> PAGE_SHIFT_2M;
+    mem_info.bit_length = align_upper_byte((mem_info.bit_count + 7) / 8); // bytes
     // init bits map memory
-    memset(mem_info.bits_map, 0xff, mem_info.bits_length);
+    memset(mem_info.bit_map, 0xff, mem_info.bit_length);
 
-    mem_info.pages = (struct Page *) align_upper_4k(mem_info.bits_map + mem_info.bits_length);
-    mem_info.pages_size = total_memory >> PAGE_SHIFT_2M;
-    mem_info.pages_length = align_upper_byte(mem_info.pages_size * sizeof(struct Page)); // bytes
-    // init pages memory
-    memset(mem_info.pages, 0x00, mem_info.pages_length);
+    mem_info.page = (struct Page *) align_upper_4k(mem_info.bit_map + mem_info.bit_length);
+    mem_info.page_count = total_memory >> PAGE_SHIFT_2M;
+    mem_info.page_length = align_upper_byte(mem_info.page_count * sizeof(struct Page)); // bytes
+    // init page memory
+    memset(mem_info.page, 0x00, mem_info.page_length);
 
-    mem_info.zones = (struct Zone *) align_upper_4k(mem_info.pages + mem_info.pages_length);
-    mem_info.zones_size = mem_map.length;
-    mem_info.zones_length = align_upper_byte(mem_info.zones_size * sizeof(struct Zone)); // bytes
-    // init zones memory
-    memset(mem_info.zones, 0x00, mem_info.zones_length);
+    mem_info.zone = (struct Zone *) align_upper_4k(mem_info.page + mem_info.page_length);
+    mem_info.zone_count = mem_map.length;
+    mem_info.zone_length = align_upper_byte(mem_info.zone_count * sizeof(struct Zone)); // bytes
+    // init zone memory
+    memset(mem_info.zone, 0x00, mem_info.zone_length);
 
     int z_idx = 0;
     for (int i = 0; i < mem_map.length; i++) {
@@ -70,43 +72,43 @@ void memory_init() {
         }
 
         // zone init
-        z = mem_info.zones + z_idx++;
+        z = mem_info.zone + z_idx++;
         z->zone_start_addr = start_addr;
         z->zone_end_addr = end_addr;
         z->zone_length = end_addr - start_addr;
-        z->pages = (struct Page *) (mem_info.pages + (start_addr >> PAGE_SHIFT_2M));
-        z->pages_length = (end_addr - start_addr) >> PAGE_SHIFT_2M;
+        z->page = (struct Page *) (mem_info.page + (start_addr >> PAGE_SHIFT_2M));
+        z->page_count = (end_addr - start_addr) >> PAGE_SHIFT_2M;
         z->page_using_count = 0;
-        z->page_free_count = z->pages_length;
+        z->page_free_count = z->page_count;
 
         // page int
-        p = z->pages;
-        for (int j = 0; j < z->pages_length; j++, p++) {
+        p = z->page;
+        for (int j = 0; j < z->page_count; j++, p++) {
             p->zone = z;
             p->attr = 0;
             p->refcount = 0;
             p->phy_addr = start_addr + PAGE_SIZE_2M * j;
 
-            reset(mem_info.bits_map, p->phy_addr >> PAGE_SHIFT_2M);
+            reset(mem_info.bit_map, p->phy_addr >> PAGE_SHIFT_2M);
         }
     }
 
-    mem_info.pages->zone = mem_info.zones;
-    mem_info.pages->attr = 0;
-    mem_info.pages->refcount = 0;
-    mem_info.pages->phy_addr = 0;
+    mem_info.page->zone = mem_info.zone;
+    mem_info.page->attr = 0;
+    mem_info.page->refcount = 0;
+    mem_info.page->phy_addr = 0;
 
-    mem_info.zones_size = z_idx;
-    mem_info.zones_length = align_upper_byte(z_idx * sizeof(struct Zone)); // bytes
+    mem_info.zone_count = z_idx;
+    mem_info.zone_length = align_upper_byte(z_idx * sizeof(struct Zone)); // bytes
 
-    mem_info.end_of_struct = align_upper_byte(mem_info.zones + mem_info.zones_length + sizeof(long) * 32);
+    mem_info.end_of_struct = align_upper_byte(mem_info.zone + mem_info.zone_length + sizeof(long) * 32);
 
     unsigned int max_used_page = (vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M) + 1;
     for (int i = 0; i < max_used_page; i++) {
-        struct Page *p = mem_info.pages + i;
+        struct Page *p = mem_info.page + i;
         p->zone->page_free_count--;
         p->zone->page_using_count++;
-        set(mem_info.bits_map, i);
+        set(mem_info.bit_map, i);
         page_init(p, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
     }
 
@@ -133,12 +135,12 @@ int page_init(struct Page *page, unsigned long flags) {
 
 struct Page *alloc_pages(unsigned int num, unsigned long flags) {
     unsigned long page = 0;
-    int zone_end = mem_info.zones_size;
+    int zone_end = mem_info.zone_count;
     for (int i = 0; i < zone_end; i++) {
         struct Zone *z;
         unsigned long start, end; // page
 
-        z = mem_info.zones + i;
+        z = mem_info.zone + i;
         if (z->page_free_count < num) {
             continue;
         }
@@ -150,7 +152,7 @@ struct Page *alloc_pages(unsigned int num, unsigned long flags) {
         start = z->zone_start_addr >> PAGE_SHIFT_2M;
         end = z->zone_end_addr >> PAGE_SHIFT_2M;
         for (unsigned int j = start; j < end; j += 64) {
-            unsigned long *p = mem_info.bits_map + (j >> 6U);
+            unsigned long *p = mem_info.bit_map + (j >> 6U);
             unsigned long shift = j & 63U;
             for (unsigned int k = shift; k < 64; k++) {
                 if (!((k ? ((*p >> k) | (*(p + 1) << (64U - k))) : *p) &
@@ -175,13 +177,13 @@ struct Page *alloc_pages(unsigned int num, unsigned long flags) {
         }
         if (page > 0) {
             for (int j = 0; j < num; j++) {
-                struct Page *p = mem_info.pages + page + j;
+                struct Page *p = mem_info.page + page + j;
                 p->zone->page_free_count--;
                 p->zone->page_using_count++;
                 page_init(p, flags);
-                set(mem_info.bits_map, page + j);
+                set(mem_info.bit_map, page + j);
             }
-            return mem_info.pages + page;
+            return mem_info.page + page;
         }
     }
     return NULL;
@@ -192,7 +194,7 @@ void free_pages(struct Page *page, unsigned int num) {
         return;
     }
     for (unsigned int i = 0; i < num; i++, page++) {
-        reset(mem_info.bits_map, page->phy_addr >> PAGE_SHIFT_2M);
+        reset(mem_info.bit_map, page->phy_addr >> PAGE_SHIFT_2M);
         page->attr = 0;
         page->refcount = 0;
         page->zone->page_free_count++;

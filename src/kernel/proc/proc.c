@@ -183,9 +183,9 @@ int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsign
     struct proc_ctx *ctx = NULL;
     struct Page *page = NULL;
 
-    print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bits_map);
+    print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bit_map);
     page = alloc_pages(1, PG_PTable_Mapped | PG_Kernel);
-    print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bits_map);
+    print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bit_map);
 
     proc = (struct proc_struct *) phy_to_vir(page->phy_addr);
     memset(proc, 0, sizeof(struct proc_struct));

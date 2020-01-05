@@ -18,8 +18,8 @@ typedef unsigned int uint32_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
 
-typedef int32_t intprt_t;
-typedef uint32_t uintprt_t;
+typedef int64_t intprt_t;
+typedef uint64_t uintprt_t;
 
 typedef uintprt_t size_t;
 

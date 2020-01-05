@@ -114,19 +114,19 @@ void slab_init() {
     int start = (int) (vir_to_phy(temp_addr) >> PAGE_SHIFT_2M) + 1;
     int page_nr = vir_to_phy(mem_info.end_of_struct) >> PAGE_SHIFT_2M;
     for (unsigned int i = start; i <= page_nr; i++) {
-        struct Page *page = mem_info.pages + i;
+        struct Page *page = mem_info.page + i;
         page->zone->page_free_count--;
         page->zone->page_using_count++;
-        set(mem_info.bits_map, i);
+        set(mem_info.bit_map, i);
         page_init(page, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
     }
 
     page_nr += 1;
     for (int i = 0; i < 16; i++, page_nr++) {
-        struct Page *page = mem_info.pages + page_nr;
+        struct Page *page = mem_info.page + page_nr;
         page->zone->page_free_count--;
         page->zone->page_using_count++;
-        set(mem_info.bits_map, page_nr);
+        set(mem_info.bit_map, page_nr);
         page_init(page, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
 
         kmalloc_cache[i].cache_pool->vir_addr = phy_to_vir(page->phy_addr);
@@ -260,7 +260,7 @@ struct Slab *slab_create(unsigned long size) {
     // slab->page
     slab->page = alloc_pages(1, PG_Kernel);
     if (slab->page == NULL) {
-        print_color(RED, BLACK, "slab_create error: alloc pages == NULL\n");
+        print_color(RED, BLACK, "slab_create error: alloc page == NULL\n");
         kfree(slab);
         return NULL;
     }

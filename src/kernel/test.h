@@ -128,7 +128,7 @@ void test_mem_info() {
             total_available_pages = (end - start) >> PAGE_SHIFT_2M;
         }
     }
-    println("Total available memory size: %uMB, total available pages is: %u", total_available_memory >> 20u,
+    println("Total available memory size: %uMB, total available page is: %u", total_available_memory >> 20u,
             total_available_pages);
 
     println("code:   [%#018lx, %#018lx)", mem_info.start_code, mem_info.end_code);
@@ -136,9 +136,9 @@ void test_mem_info() {
     println("rodata: [%#018lx, %#018lx)", mem_info.start_rodata, mem_info.end_rodata);
     println("brk:    [%#018lx, %#018lx)", 0, mem_info.end_brk);
     println("end_of_struct: %#lx", mem_info.end_of_struct);
-    println("bits_map addr:%#018lx, size:%04u, length:%u", mem_info.bits_map, mem_info.bits_size, mem_info.bits_length);
-    println("pages    addr:%#018lx, size:%04u, length:%u", mem_info.pages, mem_info.pages_size, mem_info.pages_length);
-    println("zones    addr:%#018lx, size:%04u, length:%u", mem_info.zones, mem_info.zones_size, mem_info.zones_length);
+    println("bit_map addr:%#018lx, size:%04u, length:%u", mem_info.bit_map, mem_info.bit_count, mem_info.bit_length);
+    println("page    addr:%#018lx, size:%04u, length:%u", mem_info.page, mem_info.page_count, mem_info.page_length);
+    println("zone    addr:%#018lx, size:%04u, length:%u", mem_info.zone, mem_info.zone_count, mem_info.zone_length);
 }
 
 void test_get_CR3() {
@@ -151,12 +151,12 @@ void test_get_CR3() {
 void test_alloc_pages(int n) {
     struct Page *head = NULL, *page = NULL;
 
-    print_color(GREEN, BLACK, "Before alloc pages...\n");
-    for (int i = 0; i < mem_info.zones_size; i++) {
-        print_color(GREEN, BLACK, "zone[%d] using_count:%d", i, mem_info.zones[i].page_using_count);
-        print_color(GREEN, BLACK, " free_count:%d\n", mem_info.zones[i].page_free_count);
+    print_color(GREEN, BLACK, "Before alloc page...\n");
+    for (int i = 0; i < mem_info.zone_count; i++) {
+        print_color(GREEN, BLACK, "zone[%d] using_count:%d", i, mem_info.zone[i].page_using_count);
+        print_color(GREEN, BLACK, " free_count:%d\n", mem_info.zone[i].page_free_count);
     }
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map, *(mem_info.bit_map + 1));
 
     for (int i = 0; i < n; i++) {
         page = alloc_pages(1, PG_PTable_Mapped | PG_Kernel);
@@ -164,16 +164,16 @@ void test_alloc_pages(int n) {
         // print_color(INDIGO, BLACK, "Page[%02d]  addr:%#018lx%c", i, page->phy_addr, i % 3 == 2 ? '\n' : '\t');
     }
 
-    // print_color(GREEN, BLACK, "%sAfter alloc %d pages...\n", n % 3 == 0 ? "" : "\n", n);
-    print_color(GREEN, BLACK, "After alloc %d pages...\n", n);
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
+    // print_color(GREEN, BLACK, "%sAfter alloc %d page...\n", n % 3 == 0 ? "" : "\n", n);
+    print_color(GREEN, BLACK, "After alloc %d page...\n", n);
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map, *(mem_info.bit_map + 1));
 
     free_pages(head, n);
-    print_color(GREEN, BLACK, "After free %d pages...\n", n);
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map, *(mem_info.bits_map + 1));
-    for (int i = 0; i < mem_info.zones_size; i++) {
-        print_color(GREEN, BLACK, "zone[%d] using_count:%d", i, mem_info.zones[i].page_using_count);
-        print_color(GREEN, BLACK, " free_count:%d\n", mem_info.zones[i].page_free_count);
+    print_color(GREEN, BLACK, "After free %d page...\n", n);
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map, *(mem_info.bit_map + 1));
+    for (int i = 0; i < mem_info.zone_count; i++) {
+        print_color(GREEN, BLACK, "zone[%d] using_count:%d", i, mem_info.zone[i].page_using_count);
+        print_color(GREEN, BLACK, " free_count:%d\n", mem_info.zone[i].page_free_count);
     }
 }
 
@@ -181,8 +181,8 @@ void test_kmalloc() {
     unsigned long *chunk1 = NULL, *chunk2 = NULL;
     unsigned long *chunk = NULL, *chunk3, *chunk4, *chunk5, *chunk6;
 
-    print_color(GREEN, BLACK, "Before kmalloc : bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "Before kmalloc : bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
     print_color(GREEN, BLACK, "total free: %d, total using: %d\n", kmalloc_cache[3].total_free,
                 kmalloc_cache[3].total_using);
     // test kmalloc small chunk
@@ -197,9 +197,9 @@ void test_kmalloc() {
     }
     print_color(YELLOW, BLACK, "chunk1 addr: %#018lx\n", chunk1);
     print_color(YELLOW, BLACK, "chunk  addr: %#018lx\n", chunk);
-    print_color(GREEN, BLACK, "After kmalloc more then one page size small chunk: bits_map[0:1]= [%#018lx, %#018lx]\n",
-                *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "After kmalloc more then one page size small chunk: bit_map[0:1]= [%#018lx, %#018lx]\n",
+                *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
     print_color(GREEN, BLACK, "total free: %d, total using: %d\n", kmalloc_cache[3].total_free,
                 kmalloc_cache[3].total_using);
     for (int i = 0; i < PAGE_SIZE_2M / chunk_size; i++) {
@@ -222,9 +222,9 @@ void test_kmalloc() {
     if (chunk2 - chunk1 != (chunk_size / 8)) {
         print_color(RED, BLACK, "kmalloc error: chunk1 addr: %#018lx, chunk2 addr: %#018lx\n", chunk1, chunk2);
     }
-    print_color(GREEN, BLACK, "After kmalloc more then one page size large chunk: bits_map[0:1]= [%#018lx, %#018lx]\n",
-                *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "After kmalloc more then one page size large chunk: bit_map[0:1]= [%#018lx, %#018lx]\n",
+                *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
 
     kfree(chunk6);
     kfree(chunk5);
@@ -280,16 +280,16 @@ void test_create_and_destroy_slab_cache() {
     print_color(GREEN, BLACK, "slab->using_count=    %d\n", slab->using_count);
     print_color(GREEN, BLACK, "slab->free_count=     %d\n", slab->free_count);
     print_color(GREEN, BLACK, "slab->colormap=       %#018lx\n", *slab->color_map);
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
 
     void *chunk[6] = {};
     for (int i = 0; i < 6; i++) {
         chunk[i] = slab_malloc(cache, 1);
         print_color(GREEN, BLACK, "slab_malloc chunk=%#018lx, arg=%d\n", chunk[i], *(unsigned long *) chunk[i]);
     }
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
     print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
     print_color(GREEN, BLACK, "slab_cache->total_free=  %d\n", cache->total_free);
 
@@ -298,8 +298,8 @@ void test_create_and_destroy_slab_cache() {
         ret = slab_free(cache, chunk[i], 0);
         print_color(GREEN, BLACK, "slab_free ret=%d, arg=%d\n", ret, *(unsigned long *) chunk[i]);
     }
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
     print_color(GREEN, BLACK, "slab_cache->total_using= %d\n", cache->total_using);
     print_color(GREEN, BLACK, "slab_cache->total_free=  %d\n", cache->total_free);
 
@@ -311,8 +311,8 @@ void test_create_and_destroy_slab_cache() {
     print_color(GREEN, BLACK, "slab_cache->ctor=        %#018lx\n", cache->ctor);
     print_color(GREEN, BLACK, "slab_cache->dtor=        %#018lx\n", cache->dtor);
     print_color(GREEN, BLACK, "*slab_cache->cache_pool= %#018lx\n", cache->cache_pool);
-    print_color(GREEN, BLACK, "bits_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bits_map,
-                *(mem_info.bits_map + 1));
+    print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map,
+                *(mem_info.bit_map + 1));
 }
 
 #endif //_TEST_H

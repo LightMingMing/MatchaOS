@@ -60,13 +60,12 @@ struct e820_memory_map mem_map = {0, {}};
 #define phy_to_vir(addr) ((unsigned long*)((unsigned long)addr + PAGE_OFFSET))
 
 struct Zone {
-    struct Page *pages;
-    uint64_t pages_length;
-
     uint64_t zone_start_addr;
     uint64_t zone_end_addr;
-    uint64_t zone_length;
+    size_t zone_length; // in bytes
 
+    struct Page *page;
+    uint64_t page_count;
     uint64_t page_using_count;
     uint64_t page_free_count;
 };
@@ -106,17 +105,17 @@ struct Page {
 };
 
 struct Global_Memory_Descriptor {
-    unsigned long *bits_map;
-    uint64_t bits_size;
-    uint64_t bits_length;
+    unsigned long *bit_map;
+    uint64_t bit_count;
+    size_t bit_length;
 
-    struct Page *pages;
-    uint64_t pages_size;
-    uint64_t pages_length;
+    struct Page *page;
+    uint64_t page_count;
+    size_t page_length;
 
-    struct Zone *zones;
-    uint64_t zones_size;
-    uint64_t zones_length;
+    struct Zone *zone;
+    uint64_t zone_count;
+    size_t zone_length;
 
     uint64_t start_code, end_code;
     uint64_t start_data, end_data;
