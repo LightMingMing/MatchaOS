@@ -26,6 +26,10 @@ void Start_Kernel() {
 
     test_mem_info();
     test_get_CR3();
+
+    frame_buffer_init();
+    page_table_init();
+
     test_alloc_pages(64);
 
     test_kmalloc();

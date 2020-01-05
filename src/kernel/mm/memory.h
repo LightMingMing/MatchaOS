@@ -77,32 +77,98 @@ struct Zone {
 #define PG_Kernel           (1U<<3U)
 #define PG_Shared           (1U<<4U)
 
-// Page Map Level 4 Table
-typedef struct {
-    uint64_t pml4t;
-} pml4t_t;
-
-// Page Directory Point Table
-typedef struct {
-    uint64_t pdpt;
-} pdpt_t;
-
-// Page Directory Table
-typedef struct {
-    uint64_t pdt;
-} pdt_t;
-
-// Page Table
-typedef struct {
-    uint64_t pt;
-} pt_t;
-
 struct Page {
     struct Zone *zone;
     uint64_t phy_addr;
     uint32_t attr;
     uint32_t refcount;
 };
+
+// PML4 [39:48)
+#define PAGE_PML4T_OFFSET   (39UL)
+#define PAGE_PML4T_LENGTH   (9UL)
+
+// PDPT [30:39)
+#define PAGE_PDPT_OFFSET    (30UL)
+#define PAGE_PDPT_LENGTH    (9UL)
+
+// PDT  [21:30)
+#define PAGE_PDT_OFFSET     (21UL)
+#define PAGE_PDT_LENGTH     (9UL)
+
+// PT   [12:21)
+#define PAGE_PT_OFFSET      (12UL)
+#define PAGE_PT_LENGTH      (9UL)
+
+
+static inline unsigned long __offset(unsigned long addr, unsigned long offset, unsigned long length) {
+    return ((((unsigned long) phy_to_vir(addr)) >> offset) & ((1UL << length) - 1UL));
+}
+
+// Page table attribute
+
+// bit 0:   1 present, 0 not present
+#define PAGE_PRESENT    (1UL << 0UL)
+
+// bit 1:   1 read and write, 0 read only
+#define PAGE_RW         (1UL << 1UL)
+
+// bit 2:   1 user and supervisor, 0 supervisor
+#define PAGE_US         (1UL << 2UL)
+
+// bit 3:   page level write through
+#define PAGE_PWT        (1UL << 3UL)
+
+// bit 4:   page level cache disable
+#define PAGE_PCD        (1UL << 4UL)
+
+// bit 5:   1 visited, 0 unvisited
+#define PAGE_ACCESSED   (1UL << 5UL)
+
+// bit 6:   1 dirty, 0 clean
+#define PAGE_DIRTY      (1UL << 6UL)
+
+// bit 7:   1 big page, 0 small page
+#define PAGE_PS         (1UL << 7UL)
+
+// bit 8:   1 global, 0 part
+#define PAGE_GLOBAL     (1UL << 8UL)
+
+#define PAGE_KERNEL_PML4T   (PAGE_RW | PAGE_PRESENT)
+#define PAGE_KERNEL_PDPT    (PAGE_RW | PAGE_PRESENT)
+#define PAGE_KERNEL_PDT     (PAGE_PS | PAGE_RW | PAGE_PRESENT)
+
+// Page Map Level 4 Table
+typedef struct {
+    uint64_t pml4t;
+} pml4t_t;
+#define mk_pml4t(addr, attr) ((unsigned long)addr|(unsigned long)attr)
+#define set_pml4t(ptr, val) (*ptr = val)
+#define pml4t_off(addr) (__offset(addr, PAGE_PML4T_OFFSET, PAGE_PML4T_LENGTH))
+
+// Page Directory Point Table
+typedef struct {
+    uint64_t pdpt;
+} pdpt_t;
+#define mk_pdpt(addr, attr) ((unsigned long)addr|(unsigned long)attr)
+#define set_pdpt(ptr, val) (*ptr = val)
+#define pdpt_off(addr) (__offset(addr, PAGE_PDPT_OFFSET, PAGE_PDPT_LENGTH))
+
+// Page Directory Table
+typedef struct {
+    uint64_t pdt;
+} pdt_t;
+#define mk_pdt(addr, attr) ((unsigned long)addr|(unsigned long)attr)
+#define set_pdt(ptr, val) (*ptr = val)
+#define pdt_off(addr) (__offset(addr, PAGE_PDT_OFFSET, PAGE_PDT_LENGTH))
+
+// Page Table
+typedef struct {
+    uint64_t pt;
+} pt_t;
+#define mk_pt(addr, attr) ((unsigned long)addr|(unsigned long)attr)
+#define set_pt(ptr, val) (*ptr = val)
+#define pt_off(page) (__offset(page, PAGE_PT_OFFSET, PAGE_PT_LENGTH))
 
 struct Global_Memory_Descriptor {
     unsigned long *bit_map;
@@ -127,6 +193,10 @@ struct Global_Memory_Descriptor {
 struct Global_Memory_Descriptor mem_info = {};
 
 void memory_init();
+
+void frame_buffer_init();
+
+void page_table_init();
 
 int page_init(struct Page *page, unsigned long flags);
 

@@ -7,6 +7,7 @@
 
 #include <stdarg.h>
 #include "font.h"
+#include "defs.h"
 
 #define FLAG_PAD_LEFT   1u
 #define FLAG_PAD_SPACE  2u  // ' '
@@ -28,6 +29,15 @@
 #define INDIGO  0x0000ffff
 #define PURPLE  0x008000ff
 
+// Fixed Frame Buffer Physical Address
+unsigned long const FB_phy_address = 0xe0000000;
+
+// Initial Linear Address Mapped by Page Table
+unsigned long const FB_vir_address = 0xffff800003000000;
+
+// Frame Buffer Length
+size_t FB_length = 1440 * 900 * 4; // in bytes
+
 struct position {
     int x_resolution;
     int y_resolution;
@@ -42,7 +52,7 @@ struct position {
     int y_char_size;
 
     unsigned int *cur_address;
-    unsigned int *FB_address; // frame buffer address
+    unsigned int *FB_address; // Linear Address of Frame Buffer
 };
 
 struct color {
@@ -50,8 +60,7 @@ struct color {
     unsigned bd; // background color
 };
 
-struct position pos = {1440, 900, 0, 0, 0, 0, 8, 18, (unsigned int *) 0xffff800003000000,
-                       (unsigned int *) 0xffff800003000000};
+struct position pos = {1440, 900, 0, 0, 0, 0, 8, 18, (unsigned int *) FB_vir_address, (unsigned int *) FB_vir_address};
 
 // void print_fmt(void (*put_char)(int, void *, void *), void *put_data, const char *fmt, ...);
 

@@ -23,6 +23,37 @@ static void init_mem_map() {
     }
 }
 
+void frame_buffer_init() {
+    unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
+    unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
+    unsigned long *addr = NULL;
+
+    pml4t = get_CR3();
+    pml4e = pml4t + pml4t_off((unsigned long) FB_phy_address);
+    if (*pml4e == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
+    }
+
+    pdpt = phy_to_vir(*pml4e & (~0xFFUL));
+    pdpe = pdpt + pdpt_off(FB_phy_address);
+    if (!*pdpe) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
+    }
+
+    pdt = phy_to_vir(*pdpe & (~0xFFUL));
+    for (int i = 0; i < FB_length; i += PAGE_SIZE_2M) {
+        pde = pdt + pdt_off(FB_phy_address + i);
+        set_pdt(pde, mk_pdt(FB_phy_address + i, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
+    }
+
+    pos.FB_address = (unsigned int *) phy_to_vir(FB_phy_address);
+    pos.cur_address = pos.FB_address + (pos.cur_address - (unsigned int *) FB_vir_address);
+
+    flush_TLB();
+}
+
 void memory_init() {
     unsigned long total_memory = 0;
 
@@ -123,6 +154,49 @@ void memory_init() {
     flush_TLB();
     // *(int *) 0xffff80000aa00000 = 1; // will not print "Page Fault"
 
+}
+
+void page_table_init() {
+    struct Zone *zone = NULL;
+    struct Page *page = NULL;
+
+    unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
+    unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
+    unsigned long *addr = NULL;
+
+    pml4t = get_CR3();
+    pdpt = (unsigned long *) ((*phy_to_vir(pml4t)) & (~0xFFUL));
+    pdt = (unsigned long *) ((*phy_to_vir(pdpt)) & (~0xFFUL));
+    print_color(GREEN, BLACK, "BEGIN: %#018lx %#018lx %#018lx\n", pml4t, pdpt, pdt);
+
+    for (int i = 0; i < mem_info.zone_count; i++) {
+        zone = mem_info.zone + i;
+        for (int j = 0; j < zone->page_count; j++) {
+            page = zone->page + j;
+
+            pml4e = pml4t + pml4t_off(page->phy_addr);
+            if (*pml4e == 0) {
+                addr = kmalloc(PAGE_SIZE_4K);
+                set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
+            }
+
+            pdpt = phy_to_vir(*pml4e & (~0xFFUL));
+            pdpe = pdpt + pdpt_off(page->phy_addr);
+            if (!*pdpe) {
+                addr = kmalloc(PAGE_SIZE_4K);
+                set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
+            }
+
+            pdt = phy_to_vir(*pdpe & (~0xFFUL));
+            pde = pdt + pdt_off(page->phy_addr);
+            set_pdt(pde, mk_pdt(page->phy_addr, PAGE_KERNEL_PDT));
+
+            if (j % 48 == 0) {
+                print_color(GREEN, BLACK, "\n%#018lx %#018lx %#018lx\n", *pml4e, *pdpe, *pde);
+            }
+        }
+    }
+    flush_TLB();
 }
 
 int page_init(struct Page *page, unsigned long flags) {

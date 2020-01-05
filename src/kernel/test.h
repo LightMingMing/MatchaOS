@@ -10,7 +10,7 @@
 
 void test_format_print() {
     // Linear Address of Frame Buffer
-    int *address = (int *) 0xffff800003000000;
+    int *address = (int *) FB_vir_address;
     int i, j, ch;
     for (i = 0; i < 1440 * pos.y_char_size; i++) {
         *((char *) address + 0) = (char) 0xff;
