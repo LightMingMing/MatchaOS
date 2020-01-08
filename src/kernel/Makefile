@@ -5,7 +5,7 @@ SHELL = /bin/bash
 bin = ../../bin
 
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
-          $(bin)/trap.o $(bin)/intr.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
+          $(bin)/trap.o $(bin)/intr.o $(bin)/apic.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
 
 gcc_compile = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
 
@@ -29,6 +29,9 @@ $(bin)/trap.o : trap/trap.c trap/trap.h
 	$(gcc_compile)
 
 $(bin)/intr.o : trap/intr.c trap/intr.h
+	$(gcc_compile)
+
+$(bin)/apic.o : device/apic.c device/apic.h
 	$(gcc_compile)
 
 $(bin)/memory.o : mm/memory.c mm/memory.h
