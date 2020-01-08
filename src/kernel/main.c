@@ -21,6 +21,8 @@ void Start_Kernel() {
 //    test_read_PF();
 //    test_write_PF();
 
+    test_cpu_info();
+
     memory_init();
     slab_init();
 

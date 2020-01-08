@@ -7,6 +7,7 @@
 
 #include "lib/stdio.h"
 #include "lib/x86.h"
+#include "lib/cpu.h"
 
 void test_format_print() {
     // Linear Address of Frame Buffer
@@ -100,6 +101,45 @@ void test_format_print() {
     println("[%#025lX]", 0xffff0000ffff0000);
 
     print_color(GREEN, BLACK, "Nice, very good!\n");
+}
+
+void test_cpu_info() {
+    unsigned int regs[4] = {0, 0, 0, 0};
+    char message[17] = {0};
+
+    // Vendor String
+    get_cpuid(0, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
+    *(unsigned int *) &message[0] = regs[1]; // Genu
+    *(unsigned int *) &message[4] = regs[3]; // ineI
+    *(unsigned int *) &message[8] = regs[2]; // ntel
+    message[12] = '\0';
+    print_color(GREEN, BLACK, "%s\t\t max input value for basic CPUID info: %#lx\n", message, regs[0]);
+
+    // Processor Brand String
+    for (unsigned int i = 0x80000002; i < 0x80000005; i++) {
+        get_cpuid(i, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
+        *(unsigned int *) &message[0] = regs[0];
+        *(unsigned int *) &message[4] = regs[1];
+        *(unsigned int *) &message[8] = regs[2];
+        *(unsigned int *) &message[12] = regs[3];
+        message[16] = '\0';
+        print_color(GREEN, BLACK, "%s", message);
+    }
+    println("");
+
+    // Version Information: Type, Family, Model, and Stepping ID
+    get_cpuid(1, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
+    print_color(GREEN, BLACK, "Family ID: %04d, Extended Family ID: %08d\n", regs[0] >> 8U & 0xFU,
+                regs[0] >> 20U & 0xFFU);
+    print_color(GREEN, BLACK, "Model: %04d, Extended Model ID: %04d\n", regs[0] >> 4U & 0xFU,
+                regs[0] >> 16U & 0xFU);
+    print_color(GREEN, BLACK, "Processor Type: %02d\n", regs[0] >> 12U & 0x3U);
+    print_color(GREEN, BLACK, "Stepping ID: %04d\n", regs[0] & 0xFU);
+
+    // Linear/Physical Address size
+    get_cpuid(0x80000008, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
+    print_color(GREEN, BLACK, "Physical Address bits: %d\n", regs[0] & 0xFFU);
+    print_color(GREEN, BLACK, "Linear   Address bits: %d\n", regs[0] >> 8U & 0xFFU);
 }
 
 int test_DE() {
