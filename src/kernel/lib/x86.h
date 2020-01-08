@@ -92,6 +92,15 @@ static inline unsigned char io_in8(unsigned short port) {
     return tmp;
 }
 
+static inline unsigned long rdmsr(unsigned long addr) {
+    unsigned long ret;
+    __asm__ __volatile__("rdmsr\n\t"
+                         "shlq $32, %%rdx\n\t"
+                         "addq %%rdx, %0 \n\t"
+    :"=a"(ret):"c"(addr):"memory");
+    return ret;
+}
+
 static inline void wrmsr(unsigned long addr, unsigned long value) {
     __asm__ __volatile__("wrmsr"::"d"(value >> 32U), "a"(value & 0xffffffff), "c"(addr):"memory");
 }
