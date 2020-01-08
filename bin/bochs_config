@@ -3,3 +3,5 @@ vgaromimage: file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 floppya: 1_44=bin/matcha.img, status=inserted
 boot: floppy
 megs: 2048
+cpuid: x86_64=1, apic=x2apic
+cpuid: family=6, model=0x1a, stepping=5, vendor_string="GenuineIntel", brand_string="Intel(R) Core(TM) i7-4770 CPU (Haswell)"
