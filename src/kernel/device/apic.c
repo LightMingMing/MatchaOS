@@ -37,4 +37,58 @@ void local_APIC_init() {
     else
         print_color(RED, BLACK, "Disable x2APIC\n");
 
+    // Spurious interrupt vector register
+    value = rdmsr(0x80F);
+    // bit 8:  APIC Software Enable/Disable 0:Disabled, 1:Enabled
+    // bit 12: EOI-Broadcast Suppression 0:Disabled, 1:Enabled
+    //  value = value | (1UL << 8UL) | (1UL << 12UL); TODO support EOI-Broadcast suppression
+    value = value | (1UL << 8UL);
+    wrmsr(0x80F, value);
+    value = rdmsr(0x80F);
+    print_color(RED, BLACK, "%#018lx\n", value);
+    if (value >> 8UL & 1UL)
+        print_color(WHITE, BLACK, "APIC Software Enabled\t");
+    else
+        print_color(RED, BLACK, "APIC Software Disabled\t");
+
+    if (value >> 12UL & 1UL)
+        print_color(WHITE, BLACK, "EOI-Broadcast Suppression Enabled\n");
+    else
+        print_color(RED, BLACK, "EOI-Broadcast Suppression Disabled\n");
+
+    // x2APIC ID
+    // MSR address: 0x802
+    value = rdmsr(0x802);
+    print_color(WHITE, BLACK, "x2APIC ID: %#010x\n", value);
+
+    // x2APIC version
+    // MSR address: 0x803
+    value = rdmsr(0x803);
+    // Version: bit 0-7
+    print_color(WHITE, BLACK, "Version: %#02x\t", value & 0xFFU);
+    if ((value & 0xFFU) < 0x10)
+        print_color(WHITE, BLACK, "82489DX discrete APIC\n");
+    else if ((value & 0xFFU) < 0x15)
+        print_color(WHITE, BLACK, "Integrated APIC\n");
+    else
+        print_color(WHITE, BLACK, "Reserved\n");
+    // Max LVT Entry: bit 16-23
+    print_color(WHITE, BLACK, "Max LVT Entry: %#02x\n", (value >> 16UL) & 0xFFU);
+    // Suppress EOI-broadcasts: bit 24
+    // Indicates whether software can inhibit the broadcast of EOI message
+    // by setting bit 12 of the Spurious Interrupt Vector Register.
+    if (value >> 24UL & 1UL)
+        print_color(WHITE, BLACK, "Support EOI-Broadcast suppression\n");
+    else
+        print_color(RED, BLACK, "Not support EOI-Broadcast suppression\n");
+
+    // Mask all interrupts in LVT
+    value = 0x10000;
+    // wrmsr(0x82F, value); TODO CMCI, not support in current processor
+    wrmsr(0x832, value);
+    wrmsr(0x833, value);
+    wrmsr(0x834, value);
+    wrmsr(0x835, value);
+    wrmsr(0x836, value);
+    wrmsr(0x837, value);
 }
