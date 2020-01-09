@@ -27,14 +27,14 @@ void local_APIC_init() {
     value = rdmsr(0x1B);
     print_color(WHITE, BLACK, "IA32_APIC_BASE MSR: %#018lx\n", value);
 
-    if (value >> 11UL & 1UL) {
+    if (value >> 11UL & 1UL)
         print_color(WHITE, BLACK, "Enable xAPIC\t");
-    } else {
+    else
         print_color(RED, BLACK, "Disable xAPIC\t");
-    }
-    if (value >> 10UL & 1UL) {
-        print_color(WHITE, BLACK, "Enable 2xAPIC\n");
-    } else {
-        print_color(RED, BLACK, "Disable 2xAPIC\n");
-    }
+
+    if (value >> 10UL & 1UL)
+        print_color(WHITE, BLACK, "Enable x2APIC\n");
+    else
+        print_color(RED, BLACK, "Disable x2APIC\n");
+
 }
