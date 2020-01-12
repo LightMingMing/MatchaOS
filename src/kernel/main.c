@@ -1,7 +1,6 @@
 //
 // Created by 赵明明 on 2019/11/18.
 //
-#include "device/apic.h"
 #include "trap/gate.h"
 #include "trap/trap.h"
 #include "trap/intr.h"
@@ -40,8 +39,7 @@ void Start_Kernel() {
 
     intr_init();
 
-    local_APIC_init();
-//    proc_init();
+    proc_init();
 
     __asm__ __volatile__ ("hlt":: :);
 }

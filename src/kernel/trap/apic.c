@@ -4,8 +4,10 @@
 #include "../lib/cpu.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
+#include "gate.h"
+#include "intr.h"
 
-void local_APIC_init() {
+void local_apic_init() {
     unsigned int eax, ebx, ecx, edx;
     get_cpuid(1, 0, &eax, &ebx, &ecx, &edx);
     print_color(WHITE, BLACK, "CPUID.01, eax:%#010x, ebx:%#010x, ecx:%#010x, edx:%010x\n", eax, ebx, ecx, edx);
@@ -91,4 +93,21 @@ void local_APIC_init() {
     wrmsr(0x835, value);
     wrmsr(0x836, value);
     wrmsr(0x837, value);
+}
+
+void apic_init() {
+    for (int i = 0; i < 24; i++) {
+        set_intr_gate(0x20 + i, 2, interrupt[i]);
+    }
+    // Mask all interrupts of 8259A
+    io_out8(0x21, 0xff);
+    io_out8(0xa1, 0xff);
+
+    // local_apic_init();
+
+    sti();
+}
+
+void handle_IRQ(unsigned long intr_vector, unsigned long rsp) {
+    print_color(RED, BLACK, "handle_IRQ:%#08x\t", intr_vector);
 }

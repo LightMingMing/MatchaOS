@@ -48,8 +48,10 @@
             "jmp    handle_IRQ                  \t\n"   \
 );
 
+extern void (*interrupt[24])(void);
+
 void intr_init();
 
-void handle_IRQ(unsigned long intr_vector, unsigned long rsp);
+extern void handle_IRQ(unsigned long intr_vector, unsigned long rsp);
 
 #endif //_INTR_H

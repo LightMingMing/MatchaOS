@@ -6,6 +6,6 @@
 #ifndef _APIC_H
 #define _APIC_H
 
-void local_APIC_init();
+void apic_init();
 
 #endif //_APIC_H
