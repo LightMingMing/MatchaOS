@@ -9,7 +9,7 @@ bin = ../../bin
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
           $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
 
-gcc_compile = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
 
 all : $(bin)/kernel.bin
 
@@ -22,36 +22,36 @@ $(bin)/entry.o $(bin)/entry.s : entry.S
 	as --64 -o $(bin)/entry.o $(bin)/entry.s
 
 $(bin)/printk.o : lib/printk.c lib/stdio.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/string.o : lib/string.c lib/string.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/trap.o : trap/trap.c trap/trap.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/intr.o : trap/intr.c trap/intr.h
-	$(gcc_compile) -D$(PIC)
+	$(gcc) -D$(PIC)
 
 ifeq ($(PIC),APIC)
 $(bin)/pic.o: trap/apic.c trap/apic.h
-	$(gcc_compile)
+	$(gcc)
 else
 $(bin)/pic.o: trap/8259A.c trap/8259A.h
-	$(gcc_compile)
+	$(gcc)
 endif
 
 $(bin)/memory.o : mm/memory.c mm/memory.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/slab.o : mm/slab.c mm/slab.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/proc.o : proc/proc.c proc/proc.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/main.o : main.c $(bin)/printk.o $(bin)/string.o test.h
-	$(gcc_compile)
+	$(gcc)
 
 $(bin)/system : Kernel.lds $(objects)
 	ld -b elf64-x86-64 -z muldefs -o $@ $(objects) -T Kernel.lds
