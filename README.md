@@ -3,22 +3,32 @@
 
 ## 环境
 ### 编译环境
-
 操作系统: CentOS
 
 Mac或Windows操作系统推荐在Docker中安装CentOS镜像, 在容器中编译.
 
 示例:
+
+创建并保存镜像
 ```bash
-docker search centos
-docker pull centos:centos7
-docker run -it -v MatchaOS_path:/root/MatchaOS -h master centos:centos7 /bin/bash
+docker pull centos:centos8
+docker run -it -v MatchaOS_path:/root/MatchaOS -h master centos:centos8 /bin/bash
 
 yum install -y gcc
 yum install -y make
 
-cd /root/MatchaOS/src/boot/ && make
-cd /root/MatchaOS/src/kernel/ && make
+# nasm 可能需要配置yum源, 参考https://www.nasm.us/
+yum install -y nasm
+
+# 保存当前镜像
+docker ps -l    // 获取当前镜像ID
+docker commit image-id centos:matchaos
+```
+编译
+```bash
+# 以特权模式启动镜像
+docker run -it --privileged=true -v MatchaOS_path:/root/MatchaOS -h master centos:matchaos /bin/bash
+cd /root/MatchaOS/src/ && make
 ```
 
 ### 运行
@@ -29,45 +39,6 @@ sh start.sh
 ```
 
 > Mac中, 如果使用Qemu的话, 启动会出现问题, 暂时没有解决.
-
-## 部分截图
-
-### (boot)
-
-启动boot
-![boot](doc/image/boot.png)
-
-加载并执行loader
-![loader](doc/image/load_loader.png)
-
-### (loader)
-
-切换至保护模式
-![switch_to_protect_mode](doc/image/switch_to_protect_mode.png)
-
-切换至长模式
-![switch_to_long_mode](doc/image/switch_to_long_mode.png)
-
-### (kernel)
-
-配置了一套ASCII字体, 并实现格式化打印消息
-![format_print_message](doc/image/print.png)   
-
-中断和异常处理
-
-divide error
-![DE](doc/image/DE.png)
-
-Page Fault : read not presented page
-![PF_read](doc/image/PF_read.png)
-Page Fault : write not presented page
-![PF_write](doc/image/PF_write.png)
-
-memory init
-![memory_init](doc/image/mem_init.png)
-
-键盘中断, 按下并释放'matcha'键, 输出相应make code和break code
-![keyboard_interrupt](doc/image/kb_intr.png)
 
 ## 参考资料
 1. [(参考书源代码) MINE操作系统](https://gitee.com/MINEOS_admin)
