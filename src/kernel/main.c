@@ -39,7 +39,8 @@ void Start_Kernel() {
 
     intr_init();
 
-    proc_init();
+//    proc_init();
 
+    while(1);
     __asm__ __volatile__ ("hlt":: :);
 }

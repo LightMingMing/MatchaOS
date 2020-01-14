@@ -123,7 +123,20 @@ void io_apic_page_table_map() {
     set_pdt(pde, mk_pdt(phy_addr, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
 
     flush_TLB();
-};
+}
+
+void io_apic_rte_write(unsigned char index, unsigned long value) {
+    *io_apic_map.index_addr = index;
+    io_mfence();
+    *io_apic_map.data_addr = value & 0xFFFFFFFF;
+    io_mfence();
+
+    value >>= 32UL;
+    *io_apic_map.index_addr = index + 1;
+    io_mfence();
+    *io_apic_map.data_addr = value & 0xFFFFFFFF;
+    io_mfence();
+}
 
 void io_apic_init() {
     io_apic_map.base_phy_addr = 0xFEC00000;
@@ -131,6 +144,32 @@ void io_apic_init() {
     io_apic_map.data_addr = (unsigned int *) phy_to_vir(io_apic_map.base_phy_addr + 0x10);
 
     io_apic_page_table_map();
+
+    // I/O APIC ID Register
+    *io_apic_map.index_addr = 0x00;
+    io_mfence();
+    *io_apic_map.data_addr = 0x0f000000;
+    io_mfence();
+    print_color(GREEN, BLACK, "I/O APIC ID Register: index=%#04x, ID=%#03x\n", *io_apic_map.index_addr,
+                *io_apic_map.data_addr >> 24UL & 0xFUL);
+
+    // I/O APIC Version Register
+    *io_apic_map.index_addr = 0x01;
+    io_mfence();
+    print_color(GREEN, BLACK, "I/O APIC Version Register: index=%#04x, Version=%#04x, Max Redirection Entry=%d\n",
+                *io_apic_map.index_addr,
+                *io_apic_map.data_addr & 0xFFUL,
+                *io_apic_map.data_addr >> 16UL & 0xFFUL);
+
+    // I/O Redirection Table Registers
+    // Bit 16 Interrupt Mask
+    // Bit 7:0 Interrupt Vector
+    for (unsigned int i = 0x10; i < 0x40; i += 2) {
+        io_apic_rte_write(i, 0x10020 + ((i - 0x10) >> 1UL));
+    }
+
+    // Don't mask keyboard interrupt
+    io_apic_rte_write(0x12, 0x21);
 }
 
 void apic_init() {
@@ -140,6 +179,10 @@ void apic_init() {
     // Mask all interrupts of 8259A
     io_out8(0x21, 0xff);
     io_out8(0xa1, 0xff);
+
+    // enable IMCR
+    io_out8(0x22, 0x70);
+    io_out8(0x23, 0x01);
 
     local_apic_init();
 
