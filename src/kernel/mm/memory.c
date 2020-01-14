@@ -37,7 +37,7 @@ void frame_buffer_init() {
 
     pdpt = phy_to_vir(*pml4e & (~0xFFUL));
     pdpe = pdpt + pdpt_off(FB_phy_address);
-    if (!*pdpe) {
+    if (*pdpe == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
     }
@@ -182,7 +182,7 @@ void page_table_init() {
 
             pdpt = phy_to_vir(*pml4e & (~0xFFUL));
             pdpe = pdpt + pdpt_off(page->phy_addr);
-            if (!*pdpe) {
+            if (*pdpe == 0) {
                 addr = kmalloc(PAGE_SIZE_4K);
                 set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
             }
