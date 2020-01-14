@@ -1,11 +1,14 @@
 //
 // Created by 赵明明 on 2020/1/8.
 //
+#include "apic.h"
+#include "intr.h"
+#include "gate.h"
 #include "../lib/cpu.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
-#include "gate.h"
-#include "intr.h"
+#include "../mm/memory.h"
+#include "../mm/slab.h"
 
 void local_apic_init() {
     unsigned int eax, ebx, ecx, edx;
@@ -95,6 +98,41 @@ void local_apic_init() {
     wrmsr(0x837, value);
 }
 
+void io_apic_page_table_map() {
+    unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
+    unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
+    unsigned long *addr = NULL;
+
+    unsigned int phy_addr = io_apic_map.base_phy_addr;
+    pml4t = get_CR3();
+    pml4e = pml4t + pml4t_off((unsigned long) phy_addr);
+    if (*pml4e == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
+    }
+
+    pdpt = phy_to_vir(*pml4e & (~0xFFUL));
+    pdpe = pdpt + pdpt_off(phy_addr);
+    if (*pdpe == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
+    }
+
+    pdt = phy_to_vir(*pdpe & (~0xFFUL));
+    pde = pdt + pdt_off(phy_addr);
+    set_pdt(pde, mk_pdt(phy_addr, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
+
+    flush_TLB();
+};
+
+void io_apic_init() {
+    io_apic_map.base_phy_addr = 0xFEC00000;
+    io_apic_map.index_addr = (unsigned char *) phy_to_vir(io_apic_map.base_phy_addr);
+    io_apic_map.data_addr = (unsigned int *) phy_to_vir(io_apic_map.base_phy_addr + 0x10);
+
+    io_apic_page_table_map();
+}
+
 void apic_init() {
     for (int i = 0; i < 24; i++) {
         set_intr_gate(0x20 + i, 2, interrupt[i]);
@@ -103,9 +141,11 @@ void apic_init() {
     io_out8(0x21, 0xff);
     io_out8(0xa1, 0xff);
 
-    // local_apic_init();
+    local_apic_init();
 
-    sti();
+    io_apic_init();
+
+    // sti();
 }
 
 void handle_IRQ(unsigned long intr_vector, unsigned long rsp) {
