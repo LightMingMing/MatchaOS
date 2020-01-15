@@ -9,26 +9,16 @@ Mac或Windows操作系统推荐在Docker中安装CentOS镜像, 在容器中编�
 
 示例:
 
-创建并保存镜像
 ```bash
-docker pull centos:centos8
-docker run -it -v MatchaOS_path:/root/MatchaOS -h master centos:centos8 /bin/bash
+# 构建镜像
+docker build -t centos:matcha .
 
-yum install -y gcc
-yum install -y make
+# 启动容器
+docker run -id -h master --privileged --name matcha -v MatchaOS_Path:/home/matcha centos:matcha
 
-# nasm 可能需要配置yum源, 参考https://www.nasm.us/
-yum install -y nasm
-
-# 保存当前镜像
-docker ps -l    // 获取当前镜像ID
-docker commit image-id centos:matchaos
-```
-编译
-```bash
-# 以特权模式启动镜像
-docker run -it --privileged=true -v MatchaOS_path:/root/MatchaOS -h master centos:matchaos /bin/bash
-cd /root/MatchaOS/src/ && make
+# 编译
+docker exec -it matcha bin/bash
+$ make clean & make
 ```
 
 ### 运行
