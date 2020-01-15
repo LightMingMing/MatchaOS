@@ -89,8 +89,11 @@ ENTRY(device_not_available)
 	xchgq	%rax, (%rsp)
 	jmp	exception_handling
 
-
+// TODO 根据文档, 发生DF时, 会自动将错误码(0)入栈.
+// TODO 这里在初始化I/O APIC, 并使能中断(sti)后, 不明原因的出现了Double Fault, 并且没有将错误码放入栈中,
+// TODO 暂时手动将错误码(0)入栈.
 ENTRY(double_fault)
+	pushq	$0
 	pushq	%rax
 	leaq	handle_double_fault(%rip), %rax
 	xchgq	%rax, (%rsp)

@@ -188,7 +188,7 @@ void apic_init() {
 
     io_apic_init();
 
-    // sti();
+    sti();
 }
 
 void handle_IRQ(unsigned long intr_vector, unsigned long rsp) {

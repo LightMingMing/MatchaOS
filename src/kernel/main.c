@@ -6,7 +6,6 @@
 #include "trap/intr.h"
 #include "mm/memory.h"
 #include "mm/slab.h"
-#include "proc/proc.h"
 #include "test.h"
 
 void Start_Kernel() {
@@ -41,6 +40,6 @@ void Start_Kernel() {
 
 //    proc_init();
 
-    while(1);
-    __asm__ __volatile__ ("hlt":: :);
+    print_color(YELLOW, BLACK, "HLT\n");
+    hlt();
 }
