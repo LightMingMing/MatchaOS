@@ -7,7 +7,7 @@
 #include "../lib/x86.h"
 #include "../lib/stdio.h"
 
-void _8259A_init() {
+void init_8259A() {
     for (int i = 0; i < 24; i++) {
         set_intr_gate(0x20 + i, 2, interrupt[i]);
         // print_color(INDIGO, BLACK, "intr vector: %#04lx, intr handling addr: %#018lx\n", 0x20 + i, interrupt[i]);
