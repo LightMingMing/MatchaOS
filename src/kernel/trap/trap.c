@@ -86,25 +86,7 @@ void handle_device_not_available(unsigned long rsp, unsigned long error_code) {
 }
 
 void handle_double_fault(unsigned long rsp, unsigned long error_code) {
-    // general_exception_handling("Double Fault[DF]", rsp, error_code);
-    unsigned long *rip = NULL;
-    unsigned int idx;
-    rip = (unsigned long *) (rsp + 0x98);
-    print_color(RED, BLACK, "Double Fault[DF], ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", error_code, rsp, *rip);
-    if (error_code & 1u)
-        print_color(RED, BLACK, "Exception occurred during delivery of an even external to the program\n");
-    idx = (error_code & 0xfff8u) >> 3u;
-    if (error_code & 2u)
-        print_color(RED, BLACK, "Refers to a gate descriptor [%#04X] in the IDT", idx);
-    else {
-        if (error_code & 4u)
-            print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the LDT");
-        else
-            print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the GDT");
-    }
-    println("");
-    // TODO 在初始化I/O APIC, 并使能中断(sti)后, 不明原因的出现了Double Fault. 这里暂时进行恢复处理...
-    // hlt();
+    general_exception_handling("Double Fault[DF]", rsp, error_code);
 }
 
 void handle_invalid_TSS(unsigned long rsp, unsigned long error_code) {

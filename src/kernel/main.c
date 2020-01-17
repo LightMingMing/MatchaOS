@@ -40,6 +40,7 @@ void Start_Kernel() {
 
 //    proc_init();
 
-    print_color(YELLOW, BLACK, "HLT\n");
-    hlt();
+    while (1) {
+        hlt();
+    }
 }

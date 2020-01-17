@@ -176,6 +176,19 @@ void apic_init() {
     for (int i = 0; i < 24; i++) {
         set_intr_gate(0x20 + i, 2, interrupt[i]);
     }
+
+    // 8259A-master ICW 1-4
+    io_out8(0x20, 0x11);
+    io_out8(0x21, 0x20);
+    io_out8(0x21, 0x04);
+    io_out8(0x21, 0x01);
+
+    // 8259A-slave  ICW 1-4
+    io_out8(0xa0, 0x11);
+    io_out8(0xa1, 0x28);
+    io_out8(0xa1, 0x02);
+    io_out8(0xa1, 0x01);
+
     // Mask all interrupts of 8259A
     io_out8(0x21, 0xff);
     io_out8(0xa1, 0xff);
@@ -192,5 +205,10 @@ void apic_init() {
 }
 
 void handle_IRQ(unsigned long intr_vector, unsigned long rsp) {
-    print_color(RED, BLACK, "handle_IRQ:%#08x\t", intr_vector);
+    if (intr_vector == 0x21) {
+        unsigned char code = io_in8(0x60);
+        print_color(YELLOW, BLACK, "handle_IRQ:%#08x key code:%#04x\n", intr_vector, code);
+        // EOI register
+        wrmsr(0x80B, 0);
+    }
 }
