@@ -6,6 +6,8 @@
 #define _INTR_H
 
 #include "../linkage.h"
+#include "../lib/defs.h"
+#include "../lib/reg.h"
 
 #define IRQ_NAME(intr_vector)  IRQ##intr_vector##_interrupt(void)
 
@@ -52,6 +54,8 @@ extern void (*interrupt[24])(void);
 
 void intr_init();
 
-extern void handle_IRQ(unsigned long intr_vector, unsigned long rsp);
+typedef unsigned char irq_t;
+
+extern void handle_IRQ(irq_t irq, regs_t *rsp);
 
 #endif //_INTR_H

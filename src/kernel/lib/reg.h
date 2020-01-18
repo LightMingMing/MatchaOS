@@ -5,7 +5,7 @@
 #ifndef _REG_H
 #define _REG_H
 
-struct regs_struct {
+typedef struct {
     unsigned long r15;
     unsigned long r14;
     unsigned long r13;
@@ -30,7 +30,6 @@ struct regs_struct {
     unsigned long rflags;
     unsigned long rsp;
     unsigned long ss;
-};
+} regs_t;
 
-typedef struct regs_struct regs_t;
 #endif //_REG_H

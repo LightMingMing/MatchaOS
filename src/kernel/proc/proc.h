@@ -10,7 +10,7 @@
 #include "../lib/list.h"
 #include "../trap/gate.h"
 #include "../lib/stdio.h"
-#include "reg.h"
+#include "../lib/reg.h"
 
 #define NR_CPU 4
 

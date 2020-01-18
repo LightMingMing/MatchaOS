@@ -35,9 +35,9 @@ void init_8259A() {
     sti();
 }
 
-void handle_IRQ(unsigned long intr_vector, unsigned long rsp) {
-    print_color(RED, BLACK, "handle_IRQ:%#08x\t", intr_vector);
-    if (intr_vector == 0x21) { // 键盘中断向量号
+void handle_IRQ(irq_t irq, regs_t *regs) {
+    print_color(RED, BLACK, "handle_IRQ:%#04x\t", irq);
+    if (irq == 0x21) { // 键盘中断向量号
         unsigned char code = io_in8(0x60);
         print_color(INDIGO, BLACK, "key code:%#08x\n", code);
     }

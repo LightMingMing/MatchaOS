@@ -2,7 +2,6 @@
 // Created by 赵明明 on 2019/11/26.
 //
 #include "trap.h"
-#include "../lib/defs.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 
@@ -33,11 +32,10 @@ void trap_init() {
     // 32-255 User Defined Interrupts
 }
 
-static void general_exception_handling(char *name, unsigned long rsp, unsigned long error_code) {
-    unsigned long *rip = NULL;
+static void general_exception_handling(char *name, regs_t *regs, unsigned long error_code) {
     unsigned int idx;
-    rip = (unsigned long *) (rsp + 0x98);
-    print_color(RED, BLACK, "%s, ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", name, error_code, rsp, *rip);
+    print_color(RED, BLACK, "%s, ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", name, error_code, regs->rsp,
+                regs->rip);
     if (error_code & 1u)
         print_color(RED, BLACK, "Exception occurred during delivery of an even external to the program\n");
     idx = (error_code & 0xfff8u) >> 3u;
@@ -53,64 +51,63 @@ static void general_exception_handling(char *name, unsigned long rsp, unsigned l
     hlt();
 }
 
-void handle_divide_error(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Divide Error[DE]", rsp, error_code);
+void handle_divide_error(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Divide Error[DE]", regs, error_code);
 }
 
-void handle_debug_exception(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Debug Exception[DB]", rsp, error_code);
+void handle_debug_exception(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Debug Exception[DB]", regs, error_code);
 }
 
-void handle_nmi(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("NMI", rsp, error_code);
+void handle_nmi(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("NMI", regs, error_code);
 }
 
-void handle_breakpoint(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Breakpoint[BP]", rsp, error_code);
+void handle_breakpoint(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Breakpoint[BP]", regs, error_code);
 }
 
-void handle_overflow(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Overflow[OF]", rsp, error_code);
+void handle_overflow(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Overflow[OF]", regs, error_code);
 }
 
-void handle_bound_range_exceeded(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Bound Range Exceeded[BR]", rsp, error_code);
+void handle_bound_range_exceeded(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Bound Range Exceeded[BR]", regs, error_code);
 }
 
-void handle_invalid_Opcode(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Invalid Opcode[UD]", rsp, error_code);
+void handle_invalid_Opcode(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Invalid Opcode[UD]", regs, error_code);
 }
 
-void handle_device_not_available(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Device Not Available[NM]", rsp, error_code);
+void handle_device_not_available(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Device Not Available[NM]", regs, error_code);
 }
 
-void handle_double_fault(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Double Fault[DF]", rsp, error_code);
+void handle_double_fault(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Double Fault[DF]", regs, error_code);
 }
 
-void handle_invalid_TSS(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Invalid TSS[TS]", rsp, error_code);
+void handle_invalid_TSS(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Invalid TSS[TS]", regs, error_code);
 }
 
-void handle_segment_not_present(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Segment Not Present[NP]", rsp, error_code);
+void handle_segment_not_present(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Segment Not Present[NP]", regs, error_code);
 }
 
-void handle_stack_segment_fault(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Stack Segment Fault[SS]", rsp, error_code);
+void handle_stack_segment_fault(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Stack Segment Fault[SS]", regs, error_code);
 }
 
-void handle_general_protection(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("General Protection[GP]", rsp, error_code);
+void handle_general_protection(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("General Protection[GP]", regs, error_code);
 }
 
-void handle_page_fault(unsigned long rsp, unsigned long error_code) {
-    unsigned long *rip = NULL;
+void handle_page_fault(regs_t *regs, unsigned long error_code) {
     unsigned long cr2 = 0;
     __asm__ __volatile__ ("movq %%cr2, %0":"=r"(cr2)::"memory");
-    rip = (unsigned long *) (rsp + 0x98);
-    print_color(RED, BLACK, "Page Fault[PF], ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", error_code, rsp, *rip);
+    print_color(RED, BLACK, "Page Fault[PF], ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", error_code, regs->rsp,
+                regs->rip);
     if (error_code & 1u)
         print_color(RED, BLACK, "Page Not-Presented, ");
     if (error_code & 2u)
@@ -129,22 +126,22 @@ void handle_page_fault(unsigned long rsp, unsigned long error_code) {
     hlt();
 }
 
-void handle_x87_FPU_floating_point_error(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("x87 FPU Floating Point Error[MF]", rsp, error_code);
+void handle_x87_FPU_floating_point_error(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("x87 FPU Floating Point Error[MF]", regs, error_code);
 }
 
-void handle_alignment_check(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Alignment Check[AC]", rsp, error_code);
+void handle_alignment_check(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Alignment Check[AC]", regs, error_code);
 }
 
-void handle_machine_check(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Machine Check[MC]", rsp, error_code);
+void handle_machine_check(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Machine Check[MC]", regs, error_code);
 }
 
-void handle_SIMD_floating_point_exception(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("SIMD Floating Point Exception[XM]", rsp, error_code);
+void handle_SIMD_floating_point_exception(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("SIMD Floating Point Exception[XM]", regs, error_code);
 }
 
-void handle_virtualization_exception(unsigned long rsp, unsigned long error_code) {
-    general_exception_handling("Virtualization Exception[VE]", rsp, error_code);
+void handle_virtualization_exception(regs_t *regs, unsigned long error_code) {
+    general_exception_handling("Virtualization Exception[VE]", regs, error_code);
 }
