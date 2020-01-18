@@ -207,7 +207,7 @@ void apic_init() {
 void handle_IRQ(irq_t irq, regs_t *regs) {
     if (irq == 0x21) {
         unsigned char code = io_in8(0x60);
-        print_color(YELLOW, BLACK, "handle_IRQ:%#04x key code:%#04x.\n", irq, code);
+        print_color(YELLOW, BLACK, "handle_IRQ:%#04x key code:%#04x\n", irq, code);
         // EOI register
         wrmsr(0x80B, 0);
     }
