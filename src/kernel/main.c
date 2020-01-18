@@ -41,6 +41,7 @@ void Start_Kernel() {
 //    proc_init();
 
     while (1) {
+        print_color(YELLOW, BLACK, "HALT CPU ...\n");
         hlt();
     }
 }

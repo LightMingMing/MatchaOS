@@ -50,7 +50,9 @@ static void general_exception_handling(char *name, regs_t *regs, unsigned long e
         }
         println("");
     }
-    hlt();
+    while (1) {
+        hlt();
+    }
 }
 
 void handle_divide_error(regs_t *regs, unsigned long error_code) {
@@ -125,7 +127,9 @@ void handle_page_fault(regs_t *regs, unsigned long error_code) {
     if (error_code & 16u)
         print_color(RED, BLACK, "Instruction fetch caused the fault, ");
     print_color(RED, BLACK, "CR2:%#018X\n", cr2);
-    hlt();
+    while (1) {
+        hlt();
+    }
 }
 
 void handle_x87_FPU_floating_point_error(regs_t *regs, unsigned long error_code) {
