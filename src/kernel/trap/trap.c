@@ -36,18 +36,20 @@ static void general_exception_handling(char *name, regs_t *regs, unsigned long e
     unsigned int idx;
     print_color(RED, BLACK, "%s, ERROR CODE:%#018lX, RSP:%#018lX, RIP:%#018lX\n", name, error_code, regs->rsp,
                 regs->rip);
-    if (error_code & 1u)
-        print_color(RED, BLACK, "Exception occurred during delivery of an even external to the program\n");
-    idx = (error_code & 0xfff8u) >> 3u;
-    if (error_code & 2u)
-        print_color(RED, BLACK, "Refers to a gate descriptor [%#04X] in the IDT", idx);
-    else {
-        if (error_code & 4u)
-            print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the LDT");
-        else
-            print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the GDT");
+    if (error_code) {
+        if (error_code & 1u)
+            print_color(RED, BLACK, "Exception occurred during delivery of an even external to the program\n");
+        idx = (error_code & 0xfff8u) >> 3u;
+        if (error_code & 2u)
+            print_color(RED, BLACK, "Refers to a gate descriptor [%#04X] in the IDT", idx);
+        else {
+            if (error_code & 4u)
+                print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the LDT", idx);
+            else
+                print_color(RED, BLACK, "Refers to a descriptor [%#04X] in the GDT", idx);
+        }
+        println("");
     }
-    println("");
     hlt();
 }
 
