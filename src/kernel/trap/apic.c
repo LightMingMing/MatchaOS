@@ -201,14 +201,21 @@ void apic_init() {
 
     io_apic_init();
 
+    memset(IRQ_Table, 0, sizeof(irq_desc_t) * NR_IRQs);
+
     sti();
 }
 
-void handle_IRQ(irq_t irq, regs_t *regs) {
-    if (irq == 0x21) {
-        unsigned char code = io_in8(0x60);
-        print_color(YELLOW, BLACK, "handle_IRQ:%#04x key code:%#04x\n", irq, code);
-        // EOI register
-        wrmsr(0x80B, 0);
+void handle_IRQ(irq_nr_t nr, regs_t *regs) {
+    uint8_t code = io_in8(0x60);
+    print_color(YELLOW, BLACK, "IRQ:%#04x key code:%#04x\n", nr, code);
+    irq_desc_t *irq = &IRQ_Table[nr - 0x20];
+    if (irq->handler != NULL) {
+        irq->handler(nr, regs);
     }
+    if (irq->ctl != NULL && irq->ctl->ack != NULL) {
+        irq->ctl->ack(nr);
+    }
+    // EOI register
+    wrmsr(0x80B, 0);
 }
