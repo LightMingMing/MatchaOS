@@ -7,6 +7,7 @@
 
 #include "defs.h"
 
+#define nop() __asm__ __volatile__ ("nop")
 #define cli() __asm__ __volatile__ ("cli":::"memory")
 #define sti() __asm__ __volatile__ ("sti":::"memory")
 // 串行化处理器的执行指令流, 保证之前的读写操作全部完成

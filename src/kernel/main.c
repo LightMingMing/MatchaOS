@@ -7,6 +7,7 @@
 #include "mm/memory.h"
 #include "mm/slab.h"
 #include "test.h"
+#include "driver/keyboard.h"
 
 void Start_Kernel() {
 
@@ -37,6 +38,7 @@ void Start_Kernel() {
     test_create_and_destroy_slab_cache();
 
     intr_init();
+    keyboard_init();
 
 //    proc_init();
 

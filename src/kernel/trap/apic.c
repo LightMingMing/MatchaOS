@@ -249,8 +249,6 @@ void apic_init() {
 }
 
 void handle_IRQ(irq_nr_t nr, regs_t *regs) {
-    uint8_t code = io_in8(0x60);
-    print_color(YELLOW, BLACK, "IRQ:%#04x key code:%#04x\n", nr, code);
     irq_desc_t *irq = &IRQ_Table[nr - 0x20];
     if (irq->handler != NULL) {
         irq->handler(nr, regs);
