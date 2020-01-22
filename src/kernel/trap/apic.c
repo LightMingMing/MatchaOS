@@ -125,6 +125,22 @@ void io_apic_page_table_map() {
     flush_TLB();
 }
 
+unsigned long io_apic_rte_read(unsigned char index) {
+    unsigned long value = 0;
+
+    *io_apic_map.index_addr = index;
+    io_mfence();
+    value = *io_apic_map.data_addr;
+    io_mfence();
+
+    *io_apic_map.index_addr = index + 1;
+    io_mfence();
+    value |= (unsigned long) *io_apic_map.data_addr << 32U;
+    io_mfence();
+
+    return value;
+}
+
 void io_apic_rte_write(unsigned char index, unsigned long value) {
     *io_apic_map.index_addr = index;
     io_mfence();
@@ -136,6 +152,32 @@ void io_apic_rte_write(unsigned char index, unsigned long value) {
     io_mfence();
     *io_apic_map.data_addr = value & 0xFFFFFFFF;
     io_mfence();
+}
+
+static inline unsigned char rte_idx(irq_nr_t nr) {
+    return (nr - 0x20) * 2 + 0x10;
+}
+
+void io_apic_enable(irq_nr_t nr) {
+    io_apic_rte_write(rte_idx(nr), io_apic_rte_read(rte_idx(nr)) & (~0x10000UL));
+}
+
+void io_apic_disable(irq_nr_t nr) {
+    io_apic_rte_write(rte_idx(nr), io_apic_rte_read(rte_idx(nr)) | 0x10000UL);
+}
+
+void io_apic_install(irq_nr_t nr, void *rte) {
+    struct IO_APIC_RTE *io_apic_rte = (struct IO_APIC_RTE *) rte;
+    io_apic_rte_write(rte_idx(nr), *(unsigned long *) io_apic_rte);
+}
+
+void io_apic_uninstall(irq_nr_t nr) {
+    io_apic_rte_write(rte_idx(nr), 0x10000);
+}
+
+void io_apic_edge_ack(irq_nr_t nr) {
+    // EOI register
+    wrmsr(0x80B, 0);
 }
 
 void io_apic_init() {
@@ -216,6 +258,4 @@ void handle_IRQ(irq_nr_t nr, regs_t *regs) {
     if (irq->ctl != NULL && irq->ctl->ack != NULL) {
         irq->ctl->ack(nr);
     }
-    // EOI register
-    wrmsr(0x80B, 0);
 }

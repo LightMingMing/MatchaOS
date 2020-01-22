@@ -63,9 +63,9 @@ typedef struct {
 
     void (*disable)(irq_nr_t nr);
 
-    unsigned long (*install)(irq_nr_t nr);
+    void (*install)(irq_nr_t nr, void *arg);
 
-    unsigned long (*uninstall)(irq_nr_t nr);
+    void (*uninstall)(irq_nr_t nr);
 
     void (*ack)(irq_nr_t irq);
 } irq_ctl_t;
@@ -80,14 +80,14 @@ typedef struct {
 #define NR_IRQs  24
 irq_desc_t IRQ_Table[NR_IRQs];
 
-int register_irq(irq_nr_t nr, char *name, irq_ctl_t *ctl,
+int register_irq(irq_nr_t nr, char *name, irq_ctl_t *ctl, void *arg,
                  void(*handler)(irq_nr_t, regs_t *)) {
     irq_desc_t *irq = &IRQ_Table[nr - 0x20];
     irq->name = name;
     irq->ctl = ctl;
     irq->handler = handler;
 
-    irq->ctl->install(nr);
+    irq->ctl->install(nr, arg);
     irq->ctl->enable(nr);
     return 1;
 }
