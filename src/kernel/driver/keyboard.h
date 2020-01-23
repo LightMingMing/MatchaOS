@@ -40,6 +40,8 @@ typedef struct keyboard_buffer {
     unsigned char buf[KB_BUF_SIZE];
 } kb_buf_t;
 
+extern kb_buf_t *kb_buf;
+
 void keyboard_init();
 
 void keyboard_exit();

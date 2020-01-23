@@ -7,8 +7,8 @@ PIC := APIC
 bin = ../../bin
 
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
-          $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/memory.o \
-          $(bin)/slab.o $(bin)/proc.o
+          $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/mouse.o \
+          $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
 
 gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
 
@@ -43,6 +43,9 @@ $(bin)/pic.o: trap/8259A.c trap/8259A.h
 endif
 
 $(bin)/keyboard.o : driver/keyboard.c driver/keyboard.h
+	$(gcc)
+
+$(bin)/mouse.o : driver/mouse.c driver/mouse.h
 	$(gcc)
 
 $(bin)/memory.o : mm/memory.c mm/memory.h

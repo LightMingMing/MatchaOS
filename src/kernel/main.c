@@ -8,6 +8,7 @@
 #include "mm/slab.h"
 #include "test.h"
 #include "driver/keyboard.h"
+#include "driver/mouse.h"
 
 void Start_Kernel() {
 
@@ -39,11 +40,18 @@ void Start_Kernel() {
 
     intr_init();
     keyboard_init();
+    mouse_init();
 
 //    proc_init();
 
     while (1) {
-        analysis_keycode();
+        if (kb_buf->count) {
+            analysis_keycode();
+        }
+        if (mouse_buf->count) {
+            analysis_mousecode();
+        }
+
     }
     while (1) {
         print_color(YELLOW, BLACK, "HALT CPU ...\n");
