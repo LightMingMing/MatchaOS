@@ -19,6 +19,7 @@ __asm__ __volatile__("divq %%rcx":"=a" (num),"=d" (__res):"0" (num),"1" (0),"c" 
 __res; })
 
 #define hlt() __asm__ __volatile__("hlt":: :)
+#define pause() __asm__ __volatile__("pause":: :)
 
 #define container_of(ptr, type, member)   \
 ({  \

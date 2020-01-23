@@ -6,6 +6,7 @@
 #define _KEYBOARD_H
 
 #include "../lib/defs.h"
+#include "../lib/x86.h"
 
 #define KB_IRQ_NR   0x21
 
@@ -28,8 +29,9 @@
 
 #define KBC_INIT_MODE       (0x47U)
 
-#define wait_KB_write() while(io_in8(PORT_KBC_STATUS) & STATUS_IN_BUF_FULL)
-#define wait_KB_read()  while(io_in8(PORT_KBC_STATUS) & STATUS_OUT_BUF_FULL)
+static inline void wait_KB_write() { while (io_in8(PORT_KBC_STATUS) & STATUS_IN_BUF_FULL) { pause(); }}
+
+static inline void wait_KB_read() { while (io_in8(PORT_KBC_STATUS) & STATUS_OUT_BUF_FULL) { pause(); }}
 
 #define KB_BUF_SIZE 100
 

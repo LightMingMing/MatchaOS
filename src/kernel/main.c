@@ -51,7 +51,7 @@ void Start_Kernel() {
         if (mouse_buf->count) {
             analysis_mousecode();
         }
-
+        pause();
     }
     while (1) {
         print_color(YELLOW, BLACK, "HALT CPU ...\n");
