@@ -15,6 +15,21 @@ irq_ctl_t disk_ctl = {
 };
 
 void disk_handler(irq_nr_t irq_nr, regs_t *regs) {
+    while (io_in8(PORT_DISK1_STATUS_AND_CMD) & DISK_STATUS_BSY) {
+        pause();
+    }
+
+    uint16_t data[256];
+    port_insw(PORT_DISK1_DATA, &data, 256);
+    for (unsigned int i = 0; i < 256; i++) {
+        if ((i & 7U) == 0)
+            print_color(YELLOW, BLACK, "[%03d] ", i);
+        print_color(WHITE, BLACK, "%04x ", data[i]);
+        if ((i & 15U) == 15)
+            println("");
+    }
+    uint16_t sec_cnt = (data[61] << 16U) + data[60];
+    print_color(YELLOW, BLACK, "Hard Disk sector count: %d, size: %dKB", sec_cnt, sec_cnt >> 1U);
 }
 
 void disk_init() {
@@ -47,4 +62,7 @@ void disk_init() {
         print_color(RED, BLACK, "Drive does not exist\n");
         return;
     }
+
+    // identify command
+    io_out8(PORT_DISK1_STATUS_AND_CMD, CMD_DISK_IDENTIFY);
 }
