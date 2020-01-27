@@ -9,6 +9,7 @@
 #include "test.h"
 #include "driver/keyboard.h"
 #include "driver/mouse.h"
+#include "driver/disk.h"
 
 void Start_Kernel() {
 
@@ -41,6 +42,7 @@ void Start_Kernel() {
     intr_init();
     keyboard_init();
     mouse_init();
+    disk_init();
 
 //    proc_init();
 
