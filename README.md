@@ -22,9 +22,8 @@ $ make clean & make
 ```
 
 ### 运行
-编译后, 可以直接执行`start.sh`脚本, 在boches虚拟机启动matchaOS.
+编译后, 运行`start.sh`脚本, 在bochs虚拟机中启动matchaOS.
 ```bash
-cd MatchaOS_path
 sh start.sh
 ```
 
