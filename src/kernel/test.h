@@ -8,6 +8,7 @@
 #include "lib/stdio.h"
 #include "lib/x86.h"
 #include "lib/cpu.h"
+#include "driver/disk.h"
 
 void test_format_print() {
     // Linear Address of Frame Buffer
@@ -353,6 +354,100 @@ void test_create_and_destroy_slab_cache() {
     print_color(GREEN, BLACK, "*slab_cache->cache_pool= %#018lx\n", cache->cache_pool);
     print_color(GREEN, BLACK, "bit_map[0:1]= [%#018lx, %#018lx]\n", *mem_info.bit_map,
                 *(mem_info.bit_map + 1));
+}
+
+void test_device_not_exist() {
+    struct block_buffer_node *request;
+    struct ide_device dev;
+    uint16_t data[256];
+
+    dev.base = PORT_DISK1_BASE;
+    dev.ctrl = PORT_DISK1_CTRL;
+    dev.drive = 1; // not exist
+
+    request = make_request(&dev, DISK_IDENTIFY, 0, 0, &data);
+    submit(request);
+}
+
+void test_identify() {
+    struct block_buffer_node *request;
+    struct ide_device dev;
+    uint16_t data[256];
+
+    dev.base = PORT_DISK1_BASE;
+    dev.ctrl = PORT_DISK1_CTRL;
+
+    // test identify
+    request = make_request(&dev, DISK_IDENTIFY, 0, 0, &data);
+    submit(request);
+
+    for (int i = 0; i < 100; i++) {
+        io_in8(dev.ctrl + REG_ALT_STATUS); // delay
+    }
+
+    for (unsigned int i = 0; i < 256; i++) {
+        if ((i & 7U) == 0)
+            print_color(YELLOW, BLACK, "[%03d] ", i);
+        print_color(WHITE, BLACK, "%04x ", data[i]);
+        if ((i & 15U) == 15)
+            println("");
+    }
+    uint16_t sec_cnt = (data[61] << 16U) + data[60];
+    print_color(YELLOW, BLACK, "Hard Disk sector count: %d, size: %dKB\n", sec_cnt, sec_cnt >> 1U);
+}
+
+void test_disk_read(long LBA) {
+    struct block_buffer_node *request;
+    struct ide_device dev;
+    uint16_t data[256] = {[0 ... 255] = 0};
+
+    dev.base = PORT_DISK1_BASE;
+    dev.ctrl = PORT_DISK1_CTRL;
+
+    // test read
+    print_color(YELLOW, BLACK, "[Test disk read]\n");
+    request = make_request(&dev, DISK_READ, LBA, 1, &data);
+    submit(request);
+
+    for (int i = 0; i < 100; i++) {
+        io_in8(dev.ctrl + REG_ALT_STATUS); // delay
+    }
+
+    for (unsigned int i = 0; i < 256; i++) {
+        if ((i & 7U) == 0)
+            print_color(YELLOW, BLACK, "[%03d] ", i);
+        print_color(WHITE, BLACK, "%04x ", data[i]);
+        if ((i & 15U) == 15)
+            println("");
+    }
+}
+
+void test_disk_write(long LBA) {
+    struct block_buffer_node *request;
+    struct ide_device dev;
+    uint16_t data[256];
+
+    dev.base = PORT_DISK1_BASE;
+    dev.ctrl = PORT_DISK1_CTRL;
+
+    for (int i = 0; i < 256; i++) {
+        data[i] = i;
+    }
+
+    // test write
+    print_color(YELLOW, BLACK, "[Test disk write]\n");
+    request = make_request(&dev, DISK_WRITE, LBA, 1, &data);
+    submit(request);
+    for (int i = 0; i < 100; i++) {
+        io_in8(dev.ctrl + REG_ALT_STATUS);
+    }
+}
+
+void test_disk() {
+    test_device_not_exist();
+    test_identify();
+    test_disk_write(2000);
+    test_disk_read(2000);
 }
 
 #endif //_TEST_H

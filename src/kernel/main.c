@@ -43,6 +43,7 @@ void Start_Kernel() {
     keyboard_init();
     mouse_init();
     disk_init();
+    test_disk();
 
 //    proc_init();
 
