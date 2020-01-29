@@ -101,6 +101,11 @@ static inline void port_insw(uint16_t port, void *addr, uint32_t word_cnt) {
     __asm__ __volatile__("cld; rep; insw; mfence"::"d"(port), "c"(word_cnt), "D"(addr):"memory");
 }
 
+static inline void port_outsw(uint16_t port, void *addr, uint32_t word_cnt) {
+    __asm__ __volatile__("cld; rep; outsw; mfence"::"d"(port), "c"(word_cnt), "S"(addr):"memory");
+
+}
+
 static inline unsigned long rdmsr(unsigned long addr) {
     unsigned long ret;
     __asm__ __volatile__("rdmsr\n\t"

@@ -67,7 +67,7 @@ void exec_next_cmd() {
         io_out8(dev->base + REG_COMMAND, ext ? ATA_CMD_READ_EXT : ATA_CMD_READ);
     } else if (node->command == DISK_WRITE) {
         io_out8(dev->base + REG_COMMAND, ext ? ATA_CMD_WRITE_EXT : ATA_CMD_WRITE);
-        // TODO write
+        port_outsw(node->dev->base + REG_DATA, node->buffer, 256 * node->sec_cnt);
     } else {
         io_out8(dev->base + REG_COMMAND, ATA_CMD_IDENTIFY);
     }
