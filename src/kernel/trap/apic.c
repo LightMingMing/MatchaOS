@@ -10,27 +10,66 @@
 #include "../mm/memory.h"
 #include "../mm/slab.h"
 
+uint8_t support_x2APIC = 0;
+
+void local_apic_page_table_map() {
+    unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
+    unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
+    unsigned long *addr = NULL;
+
+    uint32_t apic_base = 0xFEE00000;
+
+    pml4t = get_CR3();
+    pml4e = pml4t + pml4t_off(apic_base);
+    if (*pml4e == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
+    }
+
+    pdpt = phy_to_vir(*pml4e & (~0xFFUL));
+    pdpe = pdpt + pdpt_off(apic_base);
+    if (*pdpe == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
+    }
+
+    pdt = phy_to_vir(*pdpe & (~0xFFUL));
+    pde = pdt + pdt_off(apic_base);
+    set_pdt(pde, mk_pdt(apic_base, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
+
+    flush_TLB();
+}
+
 void local_apic_init() {
     unsigned int eax, ebx, ecx, edx;
-    get_cpuid(1, 0, &eax, &ebx, &ecx, &edx);
-    print_color(WHITE, BLACK, "CPUID.01, eax:%#010x, ebx:%#010x, ecx:%#010x, edx:%010x\n", eax, ebx, ecx, edx);
+    uint8_t xAPIC, x2APIC;
+    uint8_t EOI_suppress; // whether or not support EOI-broadcast suppression
+    uint8_t entry_cnt; // Max LTV Entry + 1
+    uint8_t version;
 
-    if ((1UL << 9UL) & edx)
+    get_cpuid(1, 0, &eax, &ebx, &ecx, &edx);
+    xAPIC = edx >> 9U & 0x1U; // EDX[9]
+    x2APIC = ecx >> 21U & 0x1U; // ECX[21]
+    support_x2APIC = x2APIC;
+
+    print_color(WHITE, BLACK, "CPUID.01, eax:%#010x, ebx:%#010x, ecx:%#010x, edx:%010x\n", eax, ebx, ecx, edx);
+    if (xAPIC)
         print_color(WHITE, BLACK, "Processor support APIC&xAPIC\t");
     else
         print_color(RED, BLACK, "Processor not support APIC&xAPIC\t");
 
-    if ((1UL << 21UL) & ecx)
+    if (x2APIC)
         print_color(WHITE, BLACK, "Processor support x2APIC\n");
     else
         print_color(RED, BLACK, "Processor not support x2APIC\n");
 
     // IA32_APIC_BASE MSR (MSR address 1BH)
     unsigned long value = rdmsr(0x1B);
-    value = value | (1UL << 11UL) | (1UL << 10UL);
+    // APIC Global Enable flag: bit 11
+    value = value | (1UL << 11UL) | (x2APIC ? (1UL << 10UL) : 0);
     wrmsr(0x1B, value);
     value = rdmsr(0x1B);
-    print_color(WHITE, BLACK, "IA32_APIC_BASE MSR: %#018lx\n", value);
+    print_color(WHITE, BLACK, "IA32_APIC_BASE MSR: %#018lx, APIC BASE: %#010lx\n", value, value & 0xFFFFF000);
 
     if (value >> 11UL & 1UL)
         print_color(WHITE, BLACK, "Enable xAPIC\t");
@@ -42,15 +81,84 @@ void local_apic_init() {
     else
         print_color(RED, BLACK, "Disable x2APIC\n");
 
-    // Spurious interrupt vector register
-    value = rdmsr(0x80F);
-    // bit 8:  APIC Software Enable/Disable 0:Disabled, 1:Enabled
-    // bit 12: EOI-Broadcast Suppression 0:Disabled, 1:Enabled
-    //  value = value | (1UL << 8UL) | (1UL << 12UL); TODO support EOI-Broadcast suppression
-    value = value | (1UL << 8UL);
-    wrmsr(0x80F, value);
-    value = rdmsr(0x80F);
-    print_color(RED, BLACK, "%#018lx\n", value);
+    local_apic_page_table_map();
+    uint8_t xAPIC_ID = (uint8_t) (*((uint32_t *) phy_to_vir(0xFEE00020)) >> 24U);
+    print_color(WHITE, BLACK, "xAPIC ID: %#04x\n", xAPIC_ID);
+
+    if (x2APIC) {
+        // x2APIC ID
+        // MSR address: 0x802
+        value = rdmsr(0x802);
+        print_color(WHITE, BLACK, "x2APIC ID: %#010x\n", value);
+    }
+
+    if (!x2APIC) {
+        // APIC version
+        value = *((uint32_t *) phy_to_vir(0xFEE00030));
+    } else {
+        // x2APIC version
+        // MSR address: 0x803
+        value = rdmsr(0x803);
+    }
+    // Version: bit 0-7
+    version = value & 0xFFU;
+    // Max LVT Entry: bit 16-23
+    entry_cnt = (value >> 16U & 0xFFU) + 1;
+    // Suppress EOI-broadcasts: bit 24
+    // Indicates whether software can inhibit the broadcast of EOI message
+    // by setting bit 12 of the Spurious Interrupt Vector Register.
+    EOI_suppress = value >> 24UL & 0x1U;
+
+    print_color(WHITE, BLACK, "Version: %#010lx\n", value);
+    print_color(WHITE, BLACK, x2APIC ? "x2APIC Version: %#04x\t" : "xAPIC Version: %#04x\t", version);
+    if (version < 0x10)
+        print_color(WHITE, BLACK, "82489DX discrete APIC\n");
+    else if (version < 0x15)
+        print_color(WHITE, BLACK, "Integrated APIC\n");
+    else
+        print_color(WHITE, BLACK, "Reserved\n");
+
+    print_color(WHITE, BLACK, "LVT Entry Count: %#02x\n", entry_cnt);
+    if (EOI_suppress)
+        print_color(WHITE, BLACK, "Support EOI-Broadcast suppression\n");
+    else
+        print_color(RED, BLACK, "Not support EOI-Broadcast suppression\n");
+
+    if (x2APIC) {
+        // Mask all interrupts in LVT
+        value = 0x10000;
+        // wrmsr(0x82F, value); TODO CMCI, not support in current processor
+        wrmsr(0x832, value);
+        wrmsr(0x833, value);
+        wrmsr(0x834, value);
+        wrmsr(0x835, value);
+        wrmsr(0x836, value);
+        wrmsr(0x837, value);
+    } else {
+        // Mask all interrupts in LVT
+        value = 0x10000;
+        *(uint32_t *) phy_to_vir(0xFEE002F0) = value;
+        *(uint32_t *) phy_to_vir(0xFEE00320) = value;
+        *(uint32_t *) phy_to_vir(0xFEE00330) = value;
+        *(uint32_t *) phy_to_vir(0xFEE00340) = value;
+        *(uint32_t *) phy_to_vir(0xFEE00350) = value;
+        *(uint32_t *) phy_to_vir(0xFEE00360) = value;
+    }
+
+    if (x2APIC) {
+        // Spurious interrupt vector register
+        value = rdmsr(0x80F);
+        // bit 8:  APIC Software Enable/Disable 0:Disabled, 1:Enabled
+        // bit 12: EOI-Broadcast Suppression 0:Disabled, 1:Enabled
+        value = value | (1UL << 8UL) | (EOI_suppress ? (1UL << 12UL) : 0);
+        wrmsr(0x80F, value);
+        value = rdmsr(0x80F);
+    } else {
+        value = *(uint32_t *) phy_to_vir(0xFEE000F0);
+        value = value | (1UL << 8UL) | (EOI_suppress ? (1UL << 12UL) : 0);
+        *(uint32_t *) phy_to_vir(0xFEE000F0) = value;
+        value = *(uint32_t *) phy_to_vir(0xFEE000F0);
+    }
     if (value >> 8UL & 1UL)
         print_color(WHITE, BLACK, "APIC Software Enabled\t");
     else
@@ -60,42 +168,6 @@ void local_apic_init() {
         print_color(WHITE, BLACK, "EOI-Broadcast Suppression Enabled\n");
     else
         print_color(RED, BLACK, "EOI-Broadcast Suppression Disabled\n");
-
-    // x2APIC ID
-    // MSR address: 0x802
-    value = rdmsr(0x802);
-    print_color(WHITE, BLACK, "x2APIC ID: %#010x\n", value);
-
-    // x2APIC version
-    // MSR address: 0x803
-    value = rdmsr(0x803);
-    // Version: bit 0-7
-    print_color(WHITE, BLACK, "Version: %#02x\t", value & 0xFFU);
-    if ((value & 0xFFU) < 0x10)
-        print_color(WHITE, BLACK, "82489DX discrete APIC\n");
-    else if ((value & 0xFFU) < 0x15)
-        print_color(WHITE, BLACK, "Integrated APIC\n");
-    else
-        print_color(WHITE, BLACK, "Reserved\n");
-    // Max LVT Entry: bit 16-23
-    print_color(WHITE, BLACK, "Max LVT Entry: %#02x\n", (value >> 16UL) & 0xFFU);
-    // Suppress EOI-broadcasts: bit 24
-    // Indicates whether software can inhibit the broadcast of EOI message
-    // by setting bit 12 of the Spurious Interrupt Vector Register.
-    if (value >> 24UL & 1UL)
-        print_color(WHITE, BLACK, "Support EOI-Broadcast suppression\n");
-    else
-        print_color(RED, BLACK, "Not support EOI-Broadcast suppression\n");
-
-    // Mask all interrupts in LVT
-    value = 0x10000;
-    // wrmsr(0x82F, value); TODO CMCI, not support in current processor
-    wrmsr(0x832, value);
-    wrmsr(0x833, value);
-    wrmsr(0x834, value);
-    wrmsr(0x835, value);
-    wrmsr(0x836, value);
-    wrmsr(0x837, value);
 }
 
 void io_apic_page_table_map() {
@@ -177,7 +249,10 @@ void io_apic_uninstall(irq_nr_t nr) {
 
 void io_apic_edge_ack(irq_nr_t nr) {
     // EOI register
-    wrmsr(0x80B, 0);
+    if (support_x2APIC)
+        wrmsr(0x80B, 0);
+    else
+        *(uint32_t *) phy_to_vir(0xFEE000B0) = 0;
 }
 
 void io_apic_init() {
