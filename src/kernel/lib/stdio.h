@@ -30,10 +30,12 @@
 #define PURPLE  0x008000ff
 
 // Fixed Frame Buffer Physical Address
-unsigned long const FB_phy_address = 0xe0000000;
+//unsigned long const FB_phy_address = 0xe0000000; // bochs
+unsigned long const FB_phy_address = 0xfd000000; // qemu
 
 // Initial Linear Address Mapped by Page Table
-unsigned long const FB_vir_address = 0xffff800003000000;
+//unsigned long const FB_vir_address = 0xffff800003000000; // bochs
+unsigned long const FB_vir_address = 0xffff800004000000; // qemu
 
 // Frame Buffer Length
 size_t FB_length = 1440 * 900 * 4; // in bytes

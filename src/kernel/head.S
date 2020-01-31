@@ -189,7 +189,15 @@ _PDE:
 	.quad 0xe0a00087
 	.quad 0xe0c00087
 	.quad 0xe0e00087
-	.fill 480, 8, 0
+	.quad 0xfd000087    // 0x4000000
+	.quad 0xfd200087
+	.quad 0xfd400087
+	.quad 0xfd600087
+	.quad 0xfd800087
+	.quad 0xfda00087
+	.quad 0xfdc00087
+	.quad 0xfde00087
+	.fill 472, 8, 0
 // 这里使用2MB物理页, 不再需要PTE(Page Table Entry)
 
 
