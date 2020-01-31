@@ -51,7 +51,7 @@ $(bin)/mouse.o : driver/mouse.c driver/mouse.h
 $(bin)/disk.o : driver/disk.c driver/disk.h
 	$(gcc)
 
-$(bin)/memory.o : mm/memory.c mm/memory.h
+$(bin)/memory.o : mm/memory.c mm/memory.h lib/stdio.h
 	$(gcc)
 
 $(bin)/slab.o : mm/slab.c mm/slab.h
