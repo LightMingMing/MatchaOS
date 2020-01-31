@@ -201,6 +201,15 @@ Label_Query_Address_Info_OK:
 	mov	bp, QueryAddressInfoOK
 	call	Func_Display_Message
 
+; 获取水平、垂直分辨率, 帧缓存区物理地址
+Label_Query_Mode_Info_Block:
+	mov	ax, 0
+	mov	es, ax
+	mov	ax, 4F01h
+	mov	cx, 180h	; 模式 0x180
+	mov	edi, 0x8000	; 保存至[es:di]0x8000处
+	int	10h
+
 Label_Set_SVGA_Mode:
 	mov	ax, 4F02h
 	mov	bx, 4180h
