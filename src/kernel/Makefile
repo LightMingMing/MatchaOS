@@ -10,7 +10,7 @@ objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/stri
           $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/mouse.o \
           $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
 
-gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@
+gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@ -g
 
 all : $(bin)/kernel.bin
 
