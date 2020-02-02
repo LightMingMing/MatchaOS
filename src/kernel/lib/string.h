@@ -11,4 +11,6 @@ size_t strlen(const char *s);
 
 size_t strnlen(const char *str, size_t len);
 
+int strcmp(const char *s1, const char *s2);
+
 #endif //_STRING_H

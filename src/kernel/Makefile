@@ -8,7 +8,7 @@ bin = ../../bin
 
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
           $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/mouse.o \
-          $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o $(bin)/proc.o
+          $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o $(bin)/cpu.o $(bin)/proc.o
 
 gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@ -g
 
@@ -55,6 +55,9 @@ $(bin)/memory.o : mm/memory.c mm/memory.h lib/stdio.h
 	$(gcc)
 
 $(bin)/slab.o : mm/slab.c mm/slab.h
+	$(gcc)
+
+$(bin)/cpu.o : proc/cpu.c proc/cpu.h
 	$(gcc)
 
 $(bin)/proc.o : proc/proc.c proc/proc.h
