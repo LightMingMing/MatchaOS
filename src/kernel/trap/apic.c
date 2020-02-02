@@ -4,13 +4,11 @@
 #include "apic.h"
 #include "intr.h"
 #include "gate.h"
-#include "../lib/cpu.h"
+#include "../proc/cpu.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 #include "../mm/memory.h"
 #include "../mm/slab.h"
-
-uint8_t support_x2APIC = 0;
 
 void local_apic_page_table_map() {
     unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
@@ -41,18 +39,14 @@ void local_apic_page_table_map() {
 }
 
 void local_apic_init() {
-    unsigned int eax, ebx, ecx, edx;
     uint8_t xAPIC, x2APIC;
     uint8_t EOI_suppress; // whether or not support EOI-broadcast suppression
     uint8_t entry_cnt; // Max LTV Entry + 1
     uint8_t version;
 
-    get_cpuid(1, 0, &eax, &ebx, &ecx, &edx);
-    xAPIC = edx >> 9U & 0x1U; // EDX[9]
-    x2APIC = ecx >> 21U & 0x1U; // ECX[21]
-    support_x2APIC = x2APIC;
+    xAPIC = xAPIC_supported();
+    x2APIC = x2APIC_supported();
 
-    print_color(WHITE, BLACK, "CPUID.01, eax:%#010x, ebx:%#010x, ecx:%#010x, edx:%010x\n", eax, ebx, ecx, edx);
     if (xAPIC)
         print_color(WHITE, BLACK, "Processor support APIC&xAPIC\t");
     else
@@ -249,7 +243,7 @@ void io_apic_uninstall(irq_nr_t nr) {
 
 void io_apic_edge_ack(irq_nr_t nr) {
     // EOI register
-    if (support_x2APIC)
+    if (x2APIC_supported())
         wrmsr(0x80B, 0);
     else
         *(uint32_t *) phy_to_vir(0xFEE000B0) = 0;

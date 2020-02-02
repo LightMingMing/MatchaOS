@@ -7,7 +7,7 @@
 
 #include "lib/stdio.h"
 #include "lib/x86.h"
-#include "lib/cpu.h"
+#include "proc/cpu.h"
 #include "driver/disk.h"
 
 void test_format_print() {
@@ -105,42 +105,48 @@ void test_format_print() {
 }
 
 void test_cpu_info() {
-    unsigned int regs[4] = {0, 0, 0, 0};
-    char message[17] = {0};
+    char vendor[12];// Processor Vendor String
+    print_color(GREEN, BLACK, "Vendor: ");
+    print_color(YELLOW, BLACK, "%s\n", get_vendor(vendor));
 
-    // Vendor String
-    get_cpuid(0, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
-    *(unsigned int *) &message[0] = regs[1]; // Genu
-    *(unsigned int *) &message[4] = regs[3]; // ineI
-    *(unsigned int *) &message[8] = regs[2]; // ntel
-    message[12] = '\0';
-    print_color(GREEN, BLACK, "%s\t\t max input value for basic CPUID info: %#lx\n", message, regs[0]);
+    char brand[48]; // Processor Brand String
+    print_color(GREEN, BLACK, "Brand:  ");
+    print_color(YELLOW, BLACK, "%s\n", get_brand(brand));
 
-    // Processor Brand String
-    for (unsigned int i = 0x80000002; i < 0x80000005; i++) {
-        get_cpuid(i, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
-        *(unsigned int *) &message[0] = regs[0];
-        *(unsigned int *) &message[4] = regs[1];
-        *(unsigned int *) &message[8] = regs[2];
-        *(unsigned int *) &message[12] = regs[3];
-        message[16] = '\0';
-        print_color(GREEN, BLACK, "%s", message);
-    }
-    println("");
+    print_color(GREEN, BLACK, "%s Hardware Multi-Threading\n", HWMT_supported() ? "Support" : "Not Support ");
+    print_color(GREEN, BLACK, "Max input value for basic CPUID info: %#lx\n", max_input_for_basic_CPUID());
 
     // Version Information: Type, Family, Model, and Stepping ID
-    get_cpuid(1, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
-    print_color(GREEN, BLACK, "Family ID: %04d, Extended Family ID: %08d\n", regs[0] >> 8U & 0xFU,
-                regs[0] >> 20U & 0xFFU);
-    print_color(GREEN, BLACK, "Model: %04d, Extended Model ID: %04d\n", regs[0] >> 4U & 0xFU,
-                regs[0] >> 16U & 0xFU);
-    print_color(GREEN, BLACK, "Processor Type: %02d\n", regs[0] >> 12U & 0x3U);
-    print_color(GREEN, BLACK, "Stepping ID: %04d\n", regs[0] & 0xFU);
+    uint32_t eax = get_cpuid_eax(1, 0);
+    print_color(GREEN, BLACK, "Family ID: %04d, Extended Family ID: %08d\n", eax >> 8U & 0xFU,
+                eax >> 20U & 0xFFU);
+    print_color(GREEN, BLACK, "Model: %04d, Extended Model ID: %04d\n", eax >> 4U & 0xFU,
+                eax >> 16U & 0xFU);
+    print_color(GREEN, BLACK, "Processor Type: %02d\n", eax >> 12U & 0x3U);
+    print_color(GREEN, BLACK, "Stepping ID: %04d\n", eax & 0xFU);
 
     // Linear/Physical Address size
-    get_cpuid(0x80000008, 0, &regs[0], &regs[1], &regs[2], &regs[3]);
-    print_color(GREEN, BLACK, "Physical Address bits: %d\n", regs[0] & 0xFFU);
-    print_color(GREEN, BLACK, "Linear   Address bits: %d\n", regs[0] >> 8U & 0xFFU);
+    eax = get_cpuid_eax(0x80000008, 0);
+    print_color(GREEN, BLACK, "Physical Address bits: %d\n", eax & 0xFFU);
+    print_color(GREEN, BLACK, "Linear   Address bits: %d\n", eax >> 8U & 0xFFU);
+
+    uint8_t type = 1;
+    uint8_t sub = 0;
+    uint8_t bit_width = 0;
+    // APIC ID Topology Levels : cluster, package, core, SMT
+    if (max_input_for_basic_CPUID() > 11) {
+        uint32_t ebx = 0, ecx = 0, edx = 0;
+        while (type) {
+            get_cpuid(0x0B, sub++, &eax, &ebx, &ecx, &edx);
+            type = ecx >> 8U & 0xFFU;
+            bit_width = (eax & 0x1FU) - bit_width; // eax[4:0] is cumulative width
+            if (type) {
+                print_color(YELLOW, BLACK, "Level Type(1 SMT, 2 core): %d, Bit width: %d, ", type, bit_width);
+                print_color(YELLOW, BLACK, "Num of Logical processor is %d.\n", ebx & 0xFFU);
+            }
+        }
+        print_color(YELLOW, BLACK, "Num of Levels is %d, APIC ID of current processor is %010lx\n", ecx & 0xFFU, edx);
+    }
 }
 
 int test_DE() {
