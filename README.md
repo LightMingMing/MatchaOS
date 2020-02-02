@@ -22,12 +22,13 @@ $ make clean & make
 ```
 
 ### 运行
-编译后, 运行`start.sh`脚本, 在bochs虚拟机中启动matchaOS.
+编译后, 运行`start.sh`脚本, 在Qemu虚拟机中启动matchaOS.
 ```bash
 sh start.sh
 ```
 
-> Mac中, 如果使用Qemu的话, 启动会出现问题, 暂时没有解决.
+> 和Bochs相比, Qemu可以模拟更多的CPU和硬件设备, 并有着更快的运行速度, 尤其是在多处理器(MP)模式下. 并且Qemu可以结合GDB, 对C代码进行调试
+> (虽然Bochs也支持但是比较麻烦)
 
 ## 参考资料
 1. [(参考书源代码) MINE操作系统](https://gitee.com/MINEOS_admin)

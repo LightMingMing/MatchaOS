@@ -1,4 +1,8 @@
 #!/bin/bash
-bochs_config=bin/bochs_config
 
-bochs -f ${bochs_config} -q
+# core2duo-v1: Intel(R) Core(TM)2 Duo CPU     T7700  @ 2.40GHz
+qemu-system-x86_64  \
+  -cpu core2duo-v1 \
+  -smp cpus=4,cores=2,threads=2  \
+  -m 2048 \
+  -boot a -fda bin/matcha.img -hdc bin/matcha.img
