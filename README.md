@@ -27,8 +27,6 @@ $ make clean & make
 sh start.sh
 ```
 
-> Mac中, 如果使用Qemu的话, 启动会出现问题, 暂时没有解决.
-
 ## 参考资料
 1. [(参考书源代码) MINE操作系统](https://gitee.com/MINEOS_admin)
 2. [清华大学操作系统实验ucore_os_lab](https://github.com/chyyuu/ucore_os_lab)
