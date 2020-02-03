@@ -10,6 +10,7 @@
 #include "driver/keyboard.h"
 #include "driver/mouse.h"
 #include "driver/disk.h"
+#include "proc/smp.h"
 
 void Start_Kernel() {
 
@@ -45,16 +46,17 @@ void Start_Kernel() {
 
 //    proc_init();
     test_cpu_info();
+    smp_init();
 
-    while (1) {
-        if (kb_buf->count) {
-            analysis_keycode();
-        }
-        if (mouse_buf->count) {
-            analysis_mousecode();
-        }
-        pause();
-    }
+//    while (1) {
+//        if (kb_buf->count) {
+//            analysis_keycode();
+//        }
+//        if (mouse_buf->count) {
+//            analysis_mousecode();
+//        }
+//        pause();
+//    }
     while (1) {
         print_color(YELLOW, BLACK, "HALT CPU ...\n");
         hlt();

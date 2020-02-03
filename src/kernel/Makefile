@@ -8,7 +8,8 @@ bin = ../../bin
 
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
           $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/mouse.o \
-          $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o $(bin)/cpu.o $(bin)/proc.o
+          $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o \
+          $(bin)/cpu.o $(bin)/proc.o $(bin)/smp.o $(bin)/apu_boot.o
 
 gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@ -g
 
@@ -21,6 +22,10 @@ $(bin)/head.o $(bin)/head.s : head.S
 $(bin)/entry.o $(bin)/entry.s : entry.S
 	gcc -E $< > $(bin)/entry.s
 	as --64 -o $(bin)/entry.o $(bin)/entry.s
+
+$(bin)/apu_boot.o $(bin)/apu_boot.s : proc/APU_boot.S
+	gcc -E $< > $(bin)/apu_boot.s
+	as --64 -o $(bin)/apu_boot.o $(bin)/apu_boot.s
 
 $(bin)/printk.o : lib/printk.c lib/stdio.h
 	$(gcc)
@@ -61,6 +66,9 @@ $(bin)/cpu.o : proc/cpu.c proc/cpu.h
 	$(gcc)
 
 $(bin)/proc.o : proc/proc.c proc/proc.h
+	$(gcc)
+
+$(bin)/smp.o : proc/smp.c proc/smp.h
 	$(gcc)
 
 $(bin)/main.o : main.c $(bin)/printk.o $(bin)/string.o test.h
