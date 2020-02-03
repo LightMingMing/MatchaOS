@@ -62,7 +62,7 @@ struct color {
     unsigned bd; // background color
 };
 
-struct position pos = {1440, 900, 0, 0, 0, 0, 8, 18, (unsigned int *) FB_vir_address, (unsigned int *) FB_vir_address};
+struct position pos = {1440, 900, 0, 0, 0, 0, 8, 12, (unsigned int *) FB_vir_address, (unsigned int *) FB_vir_address};
 
 // void print_fmt(void (*put_char)(int, void *, void *), void *put_data, const char *fmt, ...);
 

@@ -250,7 +250,7 @@ static void print_char(int ch, struct position *p, struct color *c) {
         for (i = 0; i < p->y_char_size; i++) {
             j = p->x_char_size;
             while (j-- > 0) {
-                if (font_ascii_medium[ch][i] & (1u << (unsigned int) j)) {
+                if (font_ascii_small[ch][i] & (1u << (unsigned int) j)) {
                     *address = c->fd;
                 } else {
                     *address = c->bd;
