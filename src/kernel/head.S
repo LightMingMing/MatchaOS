@@ -40,6 +40,11 @@ entry64:
 	movq	%rax, %ss
 	movq	_stack_start(%rip), %rsp
 
+	movq    $0x1B, %rcx
+	rdmsr
+	bt	$8, %rax
+	jnc	start_smp
+
 setup_IDT:
 	leaq	ignore_int(%rip), %rdx
 	movq	$(0x8E0000080000), %rax
@@ -90,6 +95,14 @@ setup_TSS:
 go_to_kernel:
 	.quad	Start_Kernel
 
+start_smp:
+	movq	go_to_smp(%rip), %rax
+	pushq	$0x08
+	pushq	%rax
+	lretq
+
+go_to_smp:
+	.quad	Start_SMP
 
 ignore_int:
 	movq	$0x10, %rax

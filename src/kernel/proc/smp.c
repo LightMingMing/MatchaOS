@@ -22,3 +22,8 @@ void smp_init() {
     wrmmio(ICR_HIGH, 0);
     wrmmio(ICR_LOW, 0xc4620); // Start-up IPI
 }
+
+void Start_SMP() {
+    print_color(BLACK, WHITE, "AP started...\n");
+    hlt();
+}

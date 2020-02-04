@@ -10,4 +10,6 @@ extern unsigned char _APU_boot_end;
 
 void smp_init();
 
+void Start_SMP();
+
 #endif //_SMP_H

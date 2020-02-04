@@ -100,6 +100,8 @@ _APU_code64:
 	mov	%ax, %gs
 	mov	%ax, %ss
 	
+	movq	$0x100000, %rax
+	jmpq	*%rax
 	hlt
 
 .balign 4
