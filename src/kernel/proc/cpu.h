@@ -61,4 +61,64 @@ unsigned int xAPIC_supported();
 // CPUID.1:ECX[21]
 unsigned int x2APIC_supported();
 
+/**
+ * IA32_APIC_BASE MSR Address
+ * bit 8:       BSP flag
+ * bit 10:      x2APIC Enable flag if x2APIC is supported
+ * bit 11:      APIC Global Enable flag
+ * bit 12-35:   APIC Base
+ */
+#define IA32_APIC_BASE_MSR  0x1B
+
+#define BSP_FLAG_BIT        (8U)
+#define x2APIC_EN_BIT       (10U)
+#define APIC_GLOBAL_EN_BIT  (11U)
+
+#define x2APIC_ID_MSR       0x802
+/**
+ * x2APIC Version MSR Address
+ * bit 0-7:     Version
+ * bit 16-23:   Max LVT Entry
+ * bit 24:      Whether or not support suppress EOI-broadcasts
+ */
+#define x2APIC_VERSION_MSR  0x803
+/**
+ * Spurious Interrupt Vector MSR
+ * bit 8:  APIC Software Enable/Disable 0:Disabled, 1:Enabled
+ * bit 12: EOI-Broadcast Suppression 0:Disabled, 1:Enabled
+ */
+#define EOI_MSR             0x80B
+#define LDR_MSR             0x80D
+#define SVR_MSR             0x80F
+#define LVT_CMCI_MSR        0x82F
+#define LVT_TIMER_MSR       0x832
+#define LVT_TS_MSR          0x833
+#define LVT_PM_MSR          0x834
+#define LVT_LINT0_MSR       0x835
+#define LVT_LINT1_MSR       0x836
+#define LVT_ERROR_MSR       0x837
+
+// Memory Map I/O xAPIC mode
+#define APIC_BASE_ADDR      0xFEE00000
+#define APIC_ID_REG         0xFEE00020
+#define APIC_VERSION_REG    0xFEE00030
+#define EOI_REG             0xFEE000B0
+#define LDR                 0xFEE000D0
+#define DFR                 0xFEE000E0  /// Destination Format Register
+#define SVR                 0xFEE000F0  /// Spurious Interrupt Vector Register
+#define LVT_CMCI_REG        0xFEE002F0
+#define ICR_LOW             0xFEE00300  /// Interrupt Command Register
+#define ICR_HIGH            0xFEE00310
+#define LVT_TIMER_ERG       0xFEE00320
+#define LVT_TS_REG          0xFEE00330
+#define LVT_PM_REG          0xFEE00340
+#define LVT_LINT0_REG       0xFEE00350
+#define LVT_LINT1_REG       0xFEE00360
+#define LVT_ERROR_REG       0xFEE00370
+
+#define FLAT_MODEL      15
+#define CLUSTER_MODEL   0
+
+unsigned long get_IA32_APIC_BASE();
+
 #endif //_CPU_H

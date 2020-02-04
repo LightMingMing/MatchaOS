@@ -4,6 +4,7 @@
 
 #include "cpu.h"
 #include "../lib/string.h"
+#include "../lib/x86.h"
 
 char *get_vendor(char *vendor) {
     uint32_t eax, ebx, ecx, edx;
@@ -48,4 +49,8 @@ unsigned int xAPIC_supported() {
 
 unsigned int x2APIC_supported() {
     return get_cpuid_ecx(1, 0) >> 21U & 0x1U;
+}
+
+inline unsigned long get_IA32_APIC_BASE() {
+    return rdmsr(IA32_APIC_BASE_MSR);
 }

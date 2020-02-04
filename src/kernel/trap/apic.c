@@ -15,25 +15,23 @@ void local_apic_page_table_map() {
     unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
     unsigned long *addr = NULL;
 
-    uint32_t apic_base = 0xFEE00000;
-
     pml4t = get_CR3();
-    pml4e = pml4t + pml4t_off(apic_base);
+    pml4e = pml4t + pml4t_off(APIC_BASE_ADDR);
     if (*pml4e == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
     }
 
     pdpt = phy_to_vir(*pml4e & (~0xFFUL));
-    pdpe = pdpt + pdpt_off(apic_base);
+    pdpe = pdpt + pdpt_off(APIC_BASE_ADDR);
     if (*pdpe == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
     }
 
     pdt = phy_to_vir(*pdpe & (~0xFFUL));
-    pde = pdt + pdt_off(apic_base);
-    set_pdt(pde, mk_pdt(apic_base, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
+    pde = pdt + pdt_off(APIC_BASE_ADDR);
+    set_pdt(pde, mk_pdt(APIC_BASE_ADDR, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
 
     flush_TLB();
 }
@@ -58,41 +56,39 @@ void local_apic_init() {
         print_color(RED, BLACK, "Processor not support x2APIC\n");
 
     // IA32_APIC_BASE MSR (MSR address 1BH)
-    unsigned long value = rdmsr(0x1B);
+    unsigned long value = get_IA32_APIC_BASE();
     // APIC Global Enable flag: bit 11
-    value = value | (1UL << 11UL) | (x2APIC ? (1UL << 10UL) : 0);
-    wrmsr(0x1B, value);
-    value = rdmsr(0x1B);
+    value = value | (1UL << APIC_GLOBAL_EN_BIT) | (x2APIC ? (1UL << x2APIC_EN_BIT) : 0);
+    wrmsr(IA32_APIC_BASE_MSR, value);
+    value = get_IA32_APIC_BASE();
     print_color(WHITE, BLACK, "IA32_APIC_BASE MSR: %#018lx, APIC BASE: %#010lx\n", value, value & 0xFFFFF000);
 
-    if (value >> 11UL & 1UL)
+    if (value >> APIC_GLOBAL_EN_BIT & 1UL)
         print_color(WHITE, BLACK, "Enable xAPIC\t");
     else
         print_color(RED, BLACK, "Disable xAPIC\t");
 
-    if (value >> 10UL & 1UL)
+    if (value >> x2APIC_EN_BIT & 1UL)
         print_color(WHITE, BLACK, "Enable x2APIC\n");
     else
         print_color(RED, BLACK, "Disable x2APIC\n");
 
     local_apic_page_table_map();
-    uint8_t xAPIC_ID = (uint8_t) (*((uint32_t *) phy_to_vir(0xFEE00020)) >> 24U);
+    uint8_t xAPIC_ID = (uint8_t) (*((uint32_t *) phy_to_vir(APIC_ID_REG)) >> 24U);
     print_color(WHITE, BLACK, "xAPIC ID: %#04x\n", xAPIC_ID);
 
     if (x2APIC) {
         // x2APIC ID
-        // MSR address: 0x802
-        value = rdmsr(0x802);
+        value = rdmsr(x2APIC_ID_MSR);
         print_color(WHITE, BLACK, "x2APIC ID: %#010x\n", value);
     }
 
     if (!x2APIC) {
         // APIC version
-        value = *((uint32_t *) phy_to_vir(0xFEE00030));
+        value = *((uint32_t *) phy_to_vir(APIC_VERSION_REG));
     } else {
         // x2APIC version
-        // MSR address: 0x803
-        value = rdmsr(0x803);
+        value = rdmsr(x2APIC_VERSION_MSR);
     }
     // Version: bit 0-7
     version = value & 0xFFU;
@@ -121,37 +117,38 @@ void local_apic_init() {
     if (x2APIC) {
         // Mask all interrupts in LVT
         value = 0x10000;
-        // wrmsr(0x82F, value); TODO CMCI, not support in current processor
-        wrmsr(0x832, value);
-        wrmsr(0x833, value);
-        wrmsr(0x834, value);
-        wrmsr(0x835, value);
-        wrmsr(0x836, value);
-        wrmsr(0x837, value);
+//         wrmsr(LVT_CMCI_MSR, value); //TODO CMCI, not support in current processor
+        wrmsr(LVT_TIMER_MSR, value);
+        wrmsr(LVT_TS_MSR, value);
+        wrmsr(LVT_PM_MSR, value);
+        wrmsr(LVT_LINT0_MSR, value);
+        wrmsr(LVT_LINT1_MSR, value);
+        wrmsr(LVT_ERROR_MSR, value);
     } else {
         // Mask all interrupts in LVT
         value = 0x10000;
-        *(uint32_t *) phy_to_vir(0xFEE002F0) = value;
-        *(uint32_t *) phy_to_vir(0xFEE00320) = value;
-        *(uint32_t *) phy_to_vir(0xFEE00330) = value;
-        *(uint32_t *) phy_to_vir(0xFEE00340) = value;
-        *(uint32_t *) phy_to_vir(0xFEE00350) = value;
-        *(uint32_t *) phy_to_vir(0xFEE00360) = value;
+        *(uint32_t *) phy_to_vir(LVT_CMCI_REG) = value;
+        *(uint32_t *) phy_to_vir(LVT_TIMER_ERG) = value;
+        *(uint32_t *) phy_to_vir(LVT_TS_REG) = value;
+        *(uint32_t *) phy_to_vir(LVT_PM_REG) = value;
+        *(uint32_t *) phy_to_vir(LVT_LINT0_REG) = value;
+        *(uint32_t *) phy_to_vir(LVT_LINT1_REG) = value;
+        *(uint32_t *) phy_to_vir(LVT_ERROR_REG) = value;
     }
 
     if (x2APIC) {
         // Spurious interrupt vector register
-        value = rdmsr(0x80F);
+        value = rdmsr(SVR_MSR);
         // bit 8:  APIC Software Enable/Disable 0:Disabled, 1:Enabled
         // bit 12: EOI-Broadcast Suppression 0:Disabled, 1:Enabled
         value = value | (1UL << 8UL) | (EOI_suppress ? (1UL << 12UL) : 0);
-        wrmsr(0x80F, value);
-        value = rdmsr(0x80F);
+        wrmsr(SVR_MSR, value);
+        value = rdmsr(SVR_MSR);
     } else {
-        value = *(uint32_t *) phy_to_vir(0xFEE000F0);
+        value = *(uint32_t *) phy_to_vir(SVR);
         value = value | (1UL << 8UL) | (EOI_suppress ? (1UL << 12UL) : 0);
-        *(uint32_t *) phy_to_vir(0xFEE000F0) = value;
-        value = *(uint32_t *) phy_to_vir(0xFEE000F0);
+        *(uint32_t *) phy_to_vir(SVR) = value;
+        value = *(uint32_t *) phy_to_vir(SVR);
     }
     if (value >> 8UL & 1UL)
         print_color(WHITE, BLACK, "APIC Software Enabled\t");
