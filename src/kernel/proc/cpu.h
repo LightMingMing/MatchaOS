@@ -100,24 +100,28 @@ unsigned int x2APIC_supported();
 
 // Memory Map I/O xAPIC mode
 #define APIC_BASE_ADDR      0xFEE00000
-#define APIC_ID_REG         0xFEE00020
-#define APIC_VERSION_REG    0xFEE00030
-#define EOI_REG             0xFEE000B0
-#define LDR                 0xFEE000D0
-#define DFR                 0xFEE000E0  /// Destination Format Register
-#define SVR                 0xFEE000F0  /// Spurious Interrupt Vector Register
-#define LVT_CMCI_REG        0xFEE002F0
-#define ICR_LOW             0xFEE00300  /// Interrupt Command Register
-#define ICR_HIGH            0xFEE00310
-#define LVT_TIMER_ERG       0xFEE00320
-#define LVT_TS_REG          0xFEE00330
-#define LVT_PM_REG          0xFEE00340
-#define LVT_LINT0_REG       0xFEE00350
-#define LVT_LINT1_REG       0xFEE00360
-#define LVT_ERROR_REG       0xFEE00370
+#define APIC_ID_REG         0x020
+#define APIC_VERSION_REG    0x030
+#define EOI_REG             0x0B0
+#define LDR                 0x0D0
+#define DFR                 0x0E0  /// Destination Format Register
+#define SVR                 0x0F0  /// Spurious Interrupt Vector Register
+#define LVT_CMCI_REG        0x2F0
+#define ICR_LOW             0x300  /// Interrupt Command Register
+#define ICR_HIGH            0x310
+#define LVT_TIMER_ERG       0x320
+#define LVT_TS_REG          0x330
+#define LVT_PM_REG          0x340
+#define LVT_LINT0_REG       0x350
+#define LVT_LINT1_REG       0x360
+#define LVT_ERROR_REG       0x370
 
 #define FLAT_MODEL      15
 #define CLUSTER_MODEL   0
+
+unsigned int rdmmio(unsigned int reg_offset);
+
+void wrmmio(unsigned int reg_offset, unsigned int value);
 
 unsigned long get_IA32_APIC_BASE();
 

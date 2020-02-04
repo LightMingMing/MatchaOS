@@ -74,7 +74,7 @@ void local_apic_init() {
         print_color(RED, BLACK, "Disable x2APIC\n");
 
     local_apic_page_table_map();
-    uint8_t xAPIC_ID = (uint8_t) (*((uint32_t *) phy_to_vir(APIC_ID_REG)) >> 24U);
+    uint8_t xAPIC_ID = (uint8_t) (rdmmio(APIC_ID_REG) >> 24U);
     print_color(WHITE, BLACK, "xAPIC ID: %#04x\n", xAPIC_ID);
 
     if (x2APIC) {
@@ -85,7 +85,7 @@ void local_apic_init() {
 
     if (!x2APIC) {
         // APIC version
-        value = *((uint32_t *) phy_to_vir(APIC_VERSION_REG));
+        value = rdmmio(APIC_VERSION_REG);
     } else {
         // x2APIC version
         value = rdmsr(x2APIC_VERSION_MSR);
@@ -127,13 +127,13 @@ void local_apic_init() {
     } else {
         // Mask all interrupts in LVT
         value = 0x10000;
-        *(uint32_t *) phy_to_vir(LVT_CMCI_REG) = value;
-        *(uint32_t *) phy_to_vir(LVT_TIMER_ERG) = value;
-        *(uint32_t *) phy_to_vir(LVT_TS_REG) = value;
-        *(uint32_t *) phy_to_vir(LVT_PM_REG) = value;
-        *(uint32_t *) phy_to_vir(LVT_LINT0_REG) = value;
-        *(uint32_t *) phy_to_vir(LVT_LINT1_REG) = value;
-        *(uint32_t *) phy_to_vir(LVT_ERROR_REG) = value;
+        wrmmio(LVT_CMCI_REG, value);
+        wrmmio(LVT_TIMER_ERG, value);
+        wrmmio(LVT_TS_REG, value);
+        wrmmio(LVT_PM_REG, value);
+        wrmmio(LVT_LINT0_REG, value);
+        wrmmio(LVT_LINT1_REG, value);
+        wrmmio(LVT_ERROR_REG, value);
     }
 
     if (x2APIC) {
@@ -145,10 +145,10 @@ void local_apic_init() {
         wrmsr(SVR_MSR, value);
         value = rdmsr(SVR_MSR);
     } else {
-        value = *(uint32_t *) phy_to_vir(SVR);
+        value = rdmmio(SVR);
         value = value | (1UL << 8UL) | (EOI_suppress ? (1UL << 12UL) : 0);
-        *(uint32_t *) phy_to_vir(SVR) = value;
-        value = *(uint32_t *) phy_to_vir(SVR);
+        wrmmio(SVR, value);
+        value = rdmmio(SVR);
     }
     if (value >> 8UL & 1UL)
         print_color(WHITE, BLACK, "APIC Software Enabled\t");
@@ -241,9 +241,9 @@ void io_apic_uninstall(irq_nr_t nr) {
 void io_apic_edge_ack(irq_nr_t nr) {
     // EOI register
     if (x2APIC_supported())
-        wrmsr(0x80B, 0);
+        wrmsr(EOI_MSR, 0);
     else
-        *(uint32_t *) phy_to_vir(0xFEE000B0) = 0;
+        wrmmio(EOI_REG, 0);
 }
 
 void io_apic_init() {

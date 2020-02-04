@@ -48,17 +48,13 @@ void Start_Kernel() {
     test_cpu_info();
     smp_init();
 
-//    while (1) {
-//        if (kb_buf->count) {
-//            analysis_keycode();
-//        }
-//        if (mouse_buf->count) {
-//            analysis_mousecode();
-//        }
-//        pause();
-//    }
     while (1) {
-        print_color(YELLOW, BLACK, "HALT CPU ...\n");
+        if (kb_buf->count) {
+            analysis_keycode();
+        }
+        if (mouse_buf->count) {
+            analysis_mousecode();
+        }
         hlt();
     }
 }

@@ -5,6 +5,7 @@
 #include "cpu.h"
 #include "../lib/string.h"
 #include "../lib/x86.h"
+#include "../mm/memory.h"
 
 char *get_vendor(char *vendor) {
     uint32_t eax, ebx, ecx, edx;
@@ -53,4 +54,12 @@ unsigned int x2APIC_supported() {
 
 inline unsigned long get_IA32_APIC_BASE() {
     return rdmsr(IA32_APIC_BASE_MSR);
+}
+
+inline unsigned int rdmmio(unsigned int reg_offset) {
+    return *(unsigned int *) (phy_to_vir(APIC_BASE_ADDR + reg_offset));
+}
+
+inline void wrmmio(unsigned int reg_offset, unsigned int value) {
+    *(unsigned int *) (phy_to_vir(APIC_BASE_ADDR + reg_offset)) = value;
 }

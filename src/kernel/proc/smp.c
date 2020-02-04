@@ -13,12 +13,12 @@ void smp_init() {
     print_color(YELLOW, BLACK, "AP Boot end   addr: %#018lx\n", &_APU_boot_end);
     memcpy(&_APU_boot_start, (void *) phy_to_vir(0x20000), &_APU_boot_end - &_APU_boot_start);
 
-    *(uint32_t *) phy_to_vir(ICR_HIGH) = 0;
-    *(uint32_t *) phy_to_vir(ICR_LOW) = 0xc4500; // INIT IPI
+    wrmmio(ICR_HIGH, 0);
+    wrmmio(ICR_LOW, 0xc4500); // INIT IPI
 
-    *(uint32_t *) phy_to_vir(ICR_HIGH) = 0;
-    *(uint32_t *) phy_to_vir(ICR_LOW) = 0xc4620; // Start-up IPI
+    wrmmio(ICR_HIGH, 0);
+    wrmmio(ICR_LOW, 0xc4620); // Start-up IPI
 
-    *(uint32_t *) phy_to_vir(ICR_HIGH) = 0;
-    *(uint32_t *) phy_to_vir(ICR_LOW) = 0xc4620; // Start-up IPI
+    wrmmio(ICR_HIGH, 0);
+    wrmmio(ICR_LOW, 0xc4620); // Start-up IPI
 }
