@@ -13,6 +13,7 @@
 #include "proc/smp.h"
 
 void Start_Kernel() {
+    spin_init(&pos.lock);
 
     test_format_print();
 

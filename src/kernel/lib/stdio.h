@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include "font.h"
 #include "defs.h"
+#include "../proc/spinlock.h"
 
 #define FLAG_PAD_LEFT   1u
 #define FLAG_PAD_SPACE  2u  // ' '
@@ -55,6 +56,8 @@ struct position {
 
     unsigned int *cur_address;
     unsigned int *FB_address; // Linear Address of Frame Buffer
+
+    spinlock_t lock;
 };
 
 struct color {

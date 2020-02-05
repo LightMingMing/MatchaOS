@@ -83,20 +83,20 @@ void destroy_request() {
 void read_handler(irq_nr_t nr) {
     struct block_buffer_node *node = in_using;
     int8_t status = io_in8(node->dev->base + REG_STATUS);
-    print_color(YELLOW, BLACK, "status=%#04x\n", status);
+    // print_color(YELLOW, BLACK, "status=%#04x\n", status);
     port_insw(node->dev->base + REG_DATA, node->buffer, 256 * node->sec_cnt);
     destroy_request();
 }
 
 void write_handler(irq_nr_t nr) {
     int8_t status = io_in8(in_using->dev->base + REG_STATUS);
-    print_color(YELLOW, BLACK, "status=%#04x\n", status);
+    // print_color(YELLOW, BLACK, "status=%#04x\n", status);
     destroy_request();
 }
 
 void identify_handler(irq_nr_t nr) {
     int8_t status = io_in8(in_using->dev->base + REG_STATUS);
-    print_color(YELLOW, BLACK, "status=%#04x\n", status);
+    // print_color(YELLOW, BLACK, "status=%#04x\n", status);
     port_insw(in_using->dev->base + REG_DATA, in_using->buffer, 256);
     destroy_request();
 }

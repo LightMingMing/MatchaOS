@@ -230,6 +230,7 @@ static void new_line(struct position *p) {
 static void print_char(int ch, struct position *p, struct color *c) {
     int i, j, old;
     const int tab = 8;
+    spin_lock(&p->lock);
     unsigned int *address = p->cur_address;
     if (p->x_pos_max <= 0)
         p->x_pos_max = p->x_resolution / p->x_char_size;
@@ -282,7 +283,7 @@ static void print_char(int ch, struct position *p, struct color *c) {
             }
         }
     }
-
+    spin_unlock(&pos.lock);
 }
 
 static void v_print(struct color *c, const char *fmt, va_list ap) {
