@@ -166,7 +166,7 @@ void proc_init() {
     wrmsr(0x174, KERNEL_CS);
     wrmsr(0x175, current->ctx->rsp0);
     wrmsr(0x176, (unsigned long) system_call);
-    setup_TSS(init_ctx.rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
+    setup_TSS(TSS_Table, init_ctx.rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
               init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
     init_tss[0].rsp0 = init_ctx.rsp0;
 

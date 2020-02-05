@@ -159,7 +159,7 @@ static inline struct proc_struct *get_current() {
 
 void __switch_to(struct proc_struct *prev, struct proc_struct *next) {
     init_tss[0].rsp0 = next->ctx->rsp0;
-    setup_TSS(init_tss[0].rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
+    setup_TSS(TSS_Table, init_tss[0].rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
               init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
 
     __asm__ __volatile__("movq  %%fs, %0":"=a"(prev->ctx->fs));

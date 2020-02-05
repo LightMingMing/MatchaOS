@@ -229,7 +229,7 @@ GDT_Table:
 	.quad 0x0000f20000000000 // User   Data 64-bit Segment 0x30
 	.quad 0x00cf9a000000ffff // KERNEL Code 32-bit Segment 0x38
 	.quad 0x00cf92000000ffff // KERNEL Data 32-bit Segment 0x40
-	.fill 10, 8, 0           // 10 ~ 11 TSS
+	.fill 100, 8, 0           // 10 ~ 11 TSS
 GDT_END:
 
 GDT_PTR:

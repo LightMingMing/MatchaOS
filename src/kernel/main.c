@@ -17,8 +17,10 @@ void Start_Kernel() {
     test_format_print();
 
     load_TR(10U);
-    setup_TSS(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
-              0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
+    setup_TSS(TSS_Table, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
+              0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
+              0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
+              0xffff800000007c00);
     trap_init();
 //    test_DE();
 //    test_read_PF();
