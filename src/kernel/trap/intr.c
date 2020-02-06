@@ -57,6 +57,26 @@ Build_IRQ(0x36)
 
 Build_IRQ(0x37)
 
+Build_IRQ(0xC8)
+
+Build_IRQ(0xC9)
+
+Build_IRQ(0xCA)
+
+Build_IRQ(0xCB)
+
+Build_IRQ(0xCC)
+
+Build_IRQ(0xCD)
+
+Build_IRQ(0xCE)
+
+Build_IRQ(0xCF)
+
+Build_IRQ(0xD0)
+
+Build_IRQ(0xD1)
+
 void (*interrupt[24])(void) = {
         IRQ0x20_interrupt,
         IRQ0x21_interrupt,
@@ -82,6 +102,19 @@ void (*interrupt[24])(void) = {
         IRQ0x35_interrupt,
         IRQ0x36_interrupt,
         IRQ0x37_interrupt
+};
+
+void (*IPI[10])(void) = {
+        IRQ0xC8_interrupt,
+        IRQ0xC9_interrupt,
+        IRQ0xCA_interrupt,
+        IRQ0xCB_interrupt,
+        IRQ0xCC_interrupt,
+        IRQ0xCD_interrupt,
+        IRQ0xCE_interrupt,
+        IRQ0xCF_interrupt,
+        IRQ0xD0_interrupt,
+        IRQ0xD1_interrupt
 };
 
 void intr_init() {

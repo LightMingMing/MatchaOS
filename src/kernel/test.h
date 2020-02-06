@@ -9,6 +9,8 @@
 #include "lib/x86.h"
 #include "proc/cpu.h"
 #include "driver/disk.h"
+#include "trap/apic.h"
+#include "proc/smp.h"
 
 void test_format_print() {
     // Linear Address of Frame Buffer
@@ -462,6 +464,44 @@ void test_disk() {
     test_identify();
     test_disk_write(2000);
     test_disk_read(2000);
+}
+
+void test_IPI() {
+    struct ICR_Entry entry;
+    entry.delivery_mode = DELIVERY_MODE_FIXED;
+    entry.dest_mode = DEST_MODE_PHYSICAL;
+    entry.delivery_status = DELIVERY_STATUS_IDLE;
+    entry.reserved1 = 0;
+    entry.level = LEVEL_ASSERT;
+    entry.trigger_mode = TRIGGER_MODE_EDGE;
+    entry.reserved2 = 0;
+    entry.dest_shorthand = SHORTHAND_NO;
+    entry.reserved3 = 0;
+
+    // AP 1
+    entry.IPI_vector = 0xC8;
+    entry.dest_field = 1;
+    send_IPI(&entry);
+
+    // delay
+    for (int i = 0; i < 1000; i++) {
+        pause();
+    }
+
+    // AP 2
+    entry.IPI_vector = 0xC9;
+    entry.dest_field = 2;
+    send_IPI(&entry);
+
+    // delay
+    for (int i = 0; i < 1000; i++) {
+        pause();
+    }
+
+    // AP 3
+    entry.dest_field = 0xCA;
+    entry.dest_field = 3;
+    send_IPI(&entry);
 }
 
 #endif //_TEST_H

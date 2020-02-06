@@ -50,6 +50,7 @@ void Start_Kernel() {
 //    proc_init();
     test_cpu_info();
     smp_init();
+    test_IPI();
 
     while (1) {
         if (kb_buf->count) {

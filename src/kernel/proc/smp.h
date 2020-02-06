@@ -6,9 +6,12 @@
 #define _SMP_H
 
 #include "../lib/defs.h"
+#include "../trap/apic.h"
 
 extern unsigned char _APU_boot_start;
 extern unsigned char _APU_boot_end;
+
+void send_IPI(struct ICR_Entry *entry);
 
 void smp_init();
 

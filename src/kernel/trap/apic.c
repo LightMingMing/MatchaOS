@@ -314,12 +314,25 @@ void apic_init() {
     sti();
 }
 
+void local_apic_edge_ack(irq_nr_t nr) {
+    // EOI register
+    if (x2APIC_supported())
+        wrmsr(EOI_MSR, 0);
+    else
+        wrmmio(EOI_REG, 0);
+}
+
 void handle_IRQ(irq_nr_t nr, regs_t *regs) {
-    irq_desc_t *irq = &IRQ_Table[nr - 0x20];
-    if (irq->handler != NULL) {
-        irq->handler(nr, regs);
-    }
-    if (irq->ctl != NULL && irq->ctl->ack != NULL) {
-        irq->ctl->ack(nr);
+    if (nr < 0x80) {
+        irq_desc_t *irq = &IRQ_Table[nr - 0x20];
+        if (irq->handler != NULL) {
+            irq->handler(nr, regs);
+        }
+        if (irq->ctl != NULL && irq->ctl->ack != NULL) {
+            irq->ctl->ack(nr);
+        }
+    } else {
+        print_color(GREEN, BLACK, "AP %d received IPI: %d\n", rdmmio(APIC_ID_REG) >> 24UL, nr);
+        local_apic_edge_ack(nr);
     }
 }

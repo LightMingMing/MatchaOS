@@ -52,6 +52,8 @@
 
 extern void (*interrupt[24])(void);
 
+extern void (*IPI[10])(void);
+
 void intr_init();
 
 typedef unsigned char irq_nr_t;
@@ -77,8 +79,15 @@ typedef struct {
     void (*handler)(irq_nr_t nr, regs_t *regs);
 } irq_desc_t;
 
+typedef struct {
+
+} IPI_desc_t;
+
 #define NR_IRQs  24
 irq_desc_t IRQ_Table[NR_IRQs];
+
+#define NR_IPIs 10
+IPI_desc_t IPI_Table[NR_IPIs];
 
 int register_irq(irq_nr_t nr, char *name, irq_ctl_t *ctl, void *arg,
                  void(*handler)(irq_nr_t, regs_t *)) {
@@ -100,6 +109,7 @@ int unregister_irq(irq_nr_t nr) {
     irq->name = NULL;
     irq->ctl = NULL;
     irq->handler = NULL;
+    return 1;
 }
 
 #endif //_INTR_H
