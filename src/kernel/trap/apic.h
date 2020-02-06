@@ -22,6 +22,7 @@ struct memory_map_regs {
 #define DELIVERY_MODE_NMI               0x4U
 #define DELIVERY_MODE_INIT              0x5U
 #define DELIVERY_MODE_EXT_INT           0x5U
+#define DELIVERY_MODE_START_UP          0x6U
 
 #define DEST_MODE_PHYSICAL  0x0U
 #define DEST_MODE_LOGICAL   0x1U
@@ -64,6 +65,30 @@ struct IO_APIC_RTE {
                     logical_dest :8;// bit 64:56
         } logical;
     } dest_field;
+}__attribute__((packed));
+
+#define LEVEL_DE_ASSERT 0U
+#define LEVEL_ASSERT    1U
+#define SHORTHAND_NO            0U
+#define SHORTHAND_SELF          1U
+#define SHORTHAND_ALL_IN_SELF   2U
+#define SHORTHAND_ALL_EX_SELF   3U
+
+struct ICR_Entry {
+    uint32_t
+            IPI_vector:8,
+            delivery_mode:3,
+            dest_mode:1,
+            delivery_status:1,
+            reserved1:1,
+            level: 1,
+            trigger_mode:1,
+            reserved2:2,
+            dest_shorthand:2,
+            reserved3:12;
+    uint32_t
+            reserved4:24,
+            dest_field:8;
 }__attribute__((packed));
 
 void io_apic_enable(irq_nr_t nr);

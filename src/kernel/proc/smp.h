@@ -5,6 +5,8 @@
 #ifndef _SMP_H
 #define _SMP_H
 
+#include "../lib/defs.h"
+
 extern unsigned char _APU_boot_start;
 extern unsigned char _APU_boot_end;
 

@@ -91,6 +91,7 @@ unsigned int x2APIC_supported();
 #define LDR_MSR             0x80D
 #define SVR_MSR             0x80F
 #define LVT_CMCI_MSR        0x82F
+#define ICR_MSR             0x830
 #define LVT_TIMER_MSR       0x832
 #define LVT_TS_MSR          0x833
 #define LVT_PM_MSR          0x834
