@@ -11,6 +11,7 @@
 #include "driver/mouse.h"
 #include "driver/disk.h"
 #include "proc/smp.h"
+#include "time/time.h"
 
 void Start_Kernel() {
     spin_init(&pos.lock);
@@ -52,11 +53,16 @@ void Start_Kernel() {
     smp_init();
     test_IPI();
 
+    struct Time time;
+
     while (1) {
         if (kb_buf->count) {
             analysis_keycode();
         }
         if (mouse_buf->count) {
+            get_time(&time);
+            print_color(GREEN, BLACK, "%4d-%02d-%02d %02d:%02d:%02d ", time.year, time.month, time.day, time.hour,
+                        time.minute, time.second);
             analysis_mousecode();
         }
         hlt();
