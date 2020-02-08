@@ -8,7 +8,7 @@ bin = ../../bin
 
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
           $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/mouse.o \
-          $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o \
+          $(bin)/HPET.o $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o \
           $(bin)/cpu.o $(bin)/proc.o $(bin)/smp.o $(bin)/apu_boot.o
 
 gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@ -g
@@ -54,6 +54,9 @@ $(bin)/mouse.o : driver/mouse.c driver/mouse.h
 	$(gcc)
 
 $(bin)/disk.o : driver/disk.c driver/disk.h
+	$(gcc)
+
+$(bin)/HPET.o : driver/HPET.c driver/HPET.h
 	$(gcc)
 
 $(bin)/memory.o : mm/memory.c mm/memory.h lib/stdio.h

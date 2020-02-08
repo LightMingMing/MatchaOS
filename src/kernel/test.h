@@ -502,6 +502,11 @@ void test_IPI() {
     entry.dest_field = 0xCA;
     entry.dest_field = 3;
     send_IPI(&entry);
+
+    // delay
+    for (int i = 0; i < 1000; i++) {
+        pause();
+    }
 }
 
 #endif //_TEST_H

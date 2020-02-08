@@ -209,6 +209,13 @@ exception_handling:
 
 
 ENTRY(ret_from_intr)
+	movq	$0,	%rcx
+	cmpq	soft_irq_status(%rip), %rcx
+	jz	restore_all
+
+soft_irq_handler:
+	callq	do_soft_irq
+
 restore_all:
 	popq	%r15
 	popq	%r14

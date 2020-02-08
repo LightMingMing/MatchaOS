@@ -12,6 +12,7 @@
 #include "driver/disk.h"
 #include "proc/smp.h"
 #include "time/time.h"
+#include "driver/HPET.h"
 
 void Start_Kernel() {
     spin_init(&pos.lock);
@@ -45,6 +46,7 @@ void Start_Kernel() {
     intr_init();
     keyboard_init();
     mouse_init();
+    HPET_init();
     disk_init();
     test_disk();
 
