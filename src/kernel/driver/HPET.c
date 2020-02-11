@@ -6,6 +6,7 @@
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 #include "../trap/apic.h"
+#include "../trap/softirq.h"
 #include "../mm/memory.h"
 
 // 1s = 10E15fs (femptoseconds)
@@ -14,6 +15,8 @@
 irq_ctl_t HPET_ctl;
 
 void HPET_handler(irq_nr_t nr, regs_t *regs);
+
+void do_timer(void *data);
 
 uint64_t read_reg(uint32_t offset) {
     uint64_t value = *(unsigned long *) phy_to_vir(HPET_BASE + offset);
@@ -27,7 +30,7 @@ void write_reg(uint32_t offset, uint64_t value) {
 }
 
 void HPET_init() {
-    uint64_t value, tick_period;
+    uint64_t tick_period;
 
     tick_period = read_reg(GEN_CAP_AND_ID_REG) >> 32UL;
 
@@ -57,6 +60,7 @@ void HPET_init() {
     entry.dest_field.physical.phy_dest = 0;
     entry.dest_field.physical.reserved2 = 0;
 
+    register_soft_irq(0, &do_timer, NULL);
     register_irq(HPET_IRQ_NR, "HPET", &HPET_ctl, &entry, &HPET_handler);
 }
 
@@ -68,6 +72,13 @@ irq_ctl_t HPET_ctl = {
         .ack = io_apic_edge_ack
 };
 
+unsigned long jiffies = 0;
+
 void HPET_handler(irq_nr_t nr, regs_t *regs) {
-    print_color(YELLOW, BLACK, ".");
+    jiffies++;
+    set_soft_irq_status(TIMER_IRQ);
+}
+
+void do_timer(void *data) {
+    print_color(YELLOW, BLACK, "(%d) ", jiffies);
 }

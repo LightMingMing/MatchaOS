@@ -7,8 +7,9 @@ PIC := APIC
 bin = ../../bin
 
 objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/string.o \
-          $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/keyboard.o $(bin)/mouse.o \
-          $(bin)/HPET.o $(bin)/disk.o $(bin)/memory.o $(bin)/slab.o \
+          $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/softirq.o	\
+          $(bin)/keyboard.o $(bin)/mouse.o $(bin)/HPET.o $(bin)/disk.o \
+          $(bin)/memory.o $(bin)/slab.o \
           $(bin)/cpu.o $(bin)/proc.o $(bin)/smp.o $(bin)/apu_boot.o
 
 gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@ -g
@@ -38,6 +39,9 @@ $(bin)/trap.o : trap/trap.c trap/trap.h
 
 $(bin)/intr.o : trap/intr.c trap/intr.h
 	$(gcc) -D$(PIC)
+
+$(bin)/softirq.o : trap/softirq.c trap/softirq.h
+	$(gcc)
 
 ifeq ($(PIC),APIC)
 $(bin)/pic.o: trap/apic.c trap/apic.h
