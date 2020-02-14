@@ -2,10 +2,9 @@
 // Created by 赵明明 on 2020/1/24.
 //
 #include "disk.h"
-#include "../trap/apic.h"
-#include "../lib/x86.h"
 #include "../lib/stdio.h"
 #include "../mm/slab.h"
+#include "../trap/apic.h"
 
 irq_ctl_t disk_ctl = {
         .enable = io_apic_enable,

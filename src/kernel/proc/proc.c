@@ -3,9 +3,8 @@
 //
 
 #include "proc.h"
-#include "../lib/x86.h"
-#include "../sched/sched.h"
 #include "../mm/slab.h"
+#include "../sched/sched.h"
 
 void display_mm_struct(struct mm_struct mm) {
     print_color(GREEN, BLACK, "Display mm_struct info\n");

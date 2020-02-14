@@ -2,11 +2,10 @@
 // Created by 赵明明 on 2019/12/29.
 //
 
-#include "slab.h"
-#include "../lib/stdio.h"
-#include "../lib/x86.h"
 #include "memory.h"
+#include "slab.h"
 #include "../lib/bit.h"
+#include "../lib/stdio.h"
 
 struct Slab *kmalloc_create(unsigned long size) {
     struct Page *page = NULL;

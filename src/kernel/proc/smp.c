@@ -2,15 +2,14 @@
 // Created by 赵明明 on 2020/2/2.
 //
 
-#include "smp.h"
 #include "cpu.h"
 #include "proc.h"
+#include "smp.h"
 #include "spinlock.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 #include "../mm/memory.h"
 #include "../mm/slab.h"
-#include "../trap/apic.h"
 
 uint8_t global_i;
 spinlock_t smp_lock;

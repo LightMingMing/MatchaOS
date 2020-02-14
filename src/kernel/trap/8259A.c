@@ -4,8 +4,8 @@
 
 #include "gate.h"
 #include "intr.h"
-#include "../lib/x86.h"
 #include "../lib/stdio.h"
+#include "../lib/x86.h"
 
 void init_8259A() {
     for (int i = 0; i < 24; i++) {

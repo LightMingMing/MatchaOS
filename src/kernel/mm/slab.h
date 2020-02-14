@@ -5,9 +5,9 @@
 #ifndef _SLAB_H
 #define _SLAB_H
 
-#include "../lib/list.h"
-#include "../lib/defs.h"
 #include "memory.h"
+#include "../lib/defs.h"
+#include "../lib/list.h"
 #include "../lib/x86.h"
 
 struct Slab {

@@ -6,8 +6,8 @@
 #ifndef _APIC_H
 #define _APIC_H
 
-#include "../lib/defs.h"
 #include "intr.h"
+#include "../lib/defs.h"
 
 // Memory Mapped Registers For Accessing IO APIC Registers
 struct memory_map_regs {

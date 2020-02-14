@@ -3,10 +3,10 @@
 //
 
 #include "keyboard.h"
+#include "../lib/stdio.h"
 #include "../mm/slab.h"
 #include "../trap/intr.h"
 #include "../trap/apic.h"
-#include "../lib/stdio.h"
 
 kb_buf_t *kb_buf = NULL;
 uint8_t L_Shift = 0;

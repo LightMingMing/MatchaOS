@@ -7,9 +7,9 @@
 #define _DISK_H
 
 #include "../lib/defs.h"
-#include "../trap/intr.h"
 #include "../lib/list.h"
 #include "../lib/x86.h"
+#include "../trap/intr.h"
 
 #define MASTER_DISK_IRQ_NR  0x2D
 #define SLAVE_DISK_IRQ_NR   0x2F

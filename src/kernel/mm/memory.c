@@ -3,10 +3,10 @@
 //
 
 #include "memory.h"
+#include "slab.h"
 #include "../lib/x86.h"
 #include "../lib/bit.h"
 #include "../lib/stdio.h"
-#include "slab.h"
 
 static void init_mem_map() {
     struct address_range_descriptor *map_point = NULL;

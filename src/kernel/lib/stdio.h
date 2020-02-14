@@ -6,8 +6,8 @@
 #define _STDIO_H
 
 #include <stdarg.h>
-#include "font.h"
 #include "defs.h"
+#include "font.h"
 #include "../proc/spinlock.h"
 
 #define FLAG_PAD_LEFT   1u

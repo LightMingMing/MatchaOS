@@ -6,12 +6,12 @@
 #define _PROC_H
 
 #include "../lib/defs.h"
-#include "../mm/memory.h"
 #include "../lib/list.h"
-#include "../trap/gate.h"
-#include "../lib/stdio.h"
 #include "../lib/reg.h"
+#include "../lib/stdio.h"
 #include "../lib/x86.h"
+#include "../mm/memory.h"
+#include "../trap/gate.h"
 
 #define NR_CPU 4
 

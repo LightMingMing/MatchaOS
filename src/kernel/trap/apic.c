@@ -2,13 +2,12 @@
 // Created by 赵明明 on 2020/1/8.
 //
 #include "apic.h"
-#include "intr.h"
 #include "gate.h"
-#include "../proc/cpu.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 #include "../mm/memory.h"
 #include "../mm/slab.h"
+#include "../proc/cpu.h"
 
 void local_apic_page_table_map() {
     unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
