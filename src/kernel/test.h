@@ -202,7 +202,6 @@ void test_get_CR3() {
     unsigned long *global_cr3 = get_CR3();
     print_color(INDIGO, BLACK, "global_cr3:   %#018lx\n", global_cr3);
     print_color(INDIGO, BLACK, "*global_cr3:  %#018lx\n", *phy_to_vir(global_cr3) & (~0xFFUL));
-    print_color(INDIGO, BLACK, "**global_cr3: %#018lx\n", *phy_to_vir(*phy_to_vir(global_cr3) & (~0xFFUL)) & (~0xFFUL));
 }
 
 void test_alloc_pages(int n) {

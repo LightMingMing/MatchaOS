@@ -56,8 +56,8 @@ struct e820_memory_map mem_map = {0, {}};
 #define align_lower_4k(addr) ((unsigned long)addr & PAGE_MASK_4K)
 #define align_lower_byte(addr) ((unsigned long)addr & (~7UL))
 
-#define vir_to_phy(addr) ((unsigned long)addr - PAGE_OFFSET)
-#define phy_to_vir(addr) ((unsigned long*)((unsigned long)addr + PAGE_OFFSET))
+#define vir_to_phy(addr) ((unsigned long)(addr) - PAGE_OFFSET)
+#define phy_to_vir(addr) ((unsigned long*)((unsigned long)(addr) + PAGE_OFFSET))
 
 struct Zone {
     uint64_t zone_start_addr;
@@ -102,7 +102,7 @@ struct Page {
 
 
 static inline unsigned long __offset(unsigned long addr, unsigned long offset, unsigned long length) {
-    return ((((unsigned long) phy_to_vir(addr)) >> offset) & ((1UL << length) - 1UL));
+    return ((addr >> offset) & ((1UL << length) - 1UL));
 }
 
 // Page table attribute
@@ -137,6 +137,10 @@ static inline unsigned long __offset(unsigned long addr, unsigned long offset, u
 #define PAGE_KERNEL_PML4T   (PAGE_RW | PAGE_PRESENT)
 #define PAGE_KERNEL_PDPT    (PAGE_RW | PAGE_PRESENT)
 #define PAGE_KERNEL_PDT     (PAGE_PS | PAGE_RW | PAGE_PRESENT)
+
+#define PAGE_USER_PML4T     (PAGE_RW | PAGE_PRESENT | PAGE_US)
+#define PAGE_USER_PDPT      (PAGE_RW | PAGE_PRESENT | PAGE_US)
+#define PAGE_USER_PDT       (PAGE_PS | PAGE_RW | PAGE_PRESENT | PAGE_US)
 
 // Page Map Level 4 Table
 typedef struct {

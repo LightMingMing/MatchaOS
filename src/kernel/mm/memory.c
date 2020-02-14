@@ -28,8 +28,8 @@ void frame_buffer_init() {
     unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
     unsigned long *addr = NULL;
 
-    pml4t = get_CR3();
-    pml4e = pml4t + pml4t_off((unsigned long) FB_phy_address);
+    pml4t = phy_to_vir(get_CR3());
+    pml4e = pml4t + pml4t_off((unsigned long) phy_to_vir(FB_phy_address));
     if (*pml4e == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
@@ -143,17 +143,11 @@ void memory_init() {
         page_init(p, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
     }
 
-    // unsigned long *global_cr3 = get_CR3();
-
-    // *(int *) 0xffff80000aa00000 = 1; // Will print "Page Fault"
-    // clear PML4 Entry
+     unsigned long *global_cr3 = get_CR3();
     for (int i = 0; i < 10; i++) {
-        // *(phy_to_vir(global_cr3) + i) = 0UL;
+         *(phy_to_vir(global_cr3) + i) = 0UL;
     }
-    // *(int *) 0xffff80000aa00000 = 1; // Will not print "Page Fault". TODO Why ?
     flush_TLB();
-    // *(int *) 0xffff80000aa00000 = 1; // will not print "Page Fault"
-
 }
 
 void page_table_init() {
@@ -164,17 +158,14 @@ void page_table_init() {
     unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
     unsigned long *addr = NULL;
 
-    pml4t = get_CR3();
-    pdpt = (unsigned long *) ((*phy_to_vir(pml4t)) & (~0xFFUL));
-    pdt = (unsigned long *) ((*phy_to_vir(pdpt)) & (~0xFFUL));
-    print_color(GREEN, BLACK, "BEGIN: %#018lx %#018lx %#018lx\n", pml4t, pdpt, pdt);
+    pml4t = phy_to_vir(get_CR3());
 
     for (int i = 0; i < mem_info.zone_count; i++) {
         zone = mem_info.zone + i;
         for (int j = 0; j < zone->page_count; j++) {
             page = zone->page + j;
 
-            pml4e = pml4t + pml4t_off(page->phy_addr);
+            pml4e = pml4t + pml4t_off((unsigned long) phy_to_vir(page->phy_addr));
             if (*pml4e == 0) {
                 addr = kmalloc(PAGE_SIZE_4K);
                 set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));

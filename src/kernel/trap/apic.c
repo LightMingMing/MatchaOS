@@ -15,23 +15,24 @@ void local_apic_page_table_map() {
     unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
     unsigned long *addr = NULL;
 
-    pml4t = get_CR3();
-    pml4e = pml4t + pml4t_off(APIC_BASE_ADDR);
+    unsigned long phy_addr = APIC_BASE_ADDR;
+    pml4t = phy_to_vir(get_CR3());
+    pml4e = pml4t + pml4t_off((unsigned long) phy_to_vir(phy_addr));
     if (*pml4e == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
     }
 
     pdpt = phy_to_vir(*pml4e & (~0xFFUL));
-    pdpe = pdpt + pdpt_off(APIC_BASE_ADDR);
+    pdpe = pdpt + pdpt_off(phy_addr);
     if (*pdpe == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
     }
 
     pdt = phy_to_vir(*pdpe & (~0xFFUL));
-    pde = pdt + pdt_off(APIC_BASE_ADDR);
-    set_pdt(pde, mk_pdt(APIC_BASE_ADDR, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
+    pde = pdt + pdt_off(phy_addr);
+    set_pdt(pde, mk_pdt(phy_addr, PAGE_KERNEL_PDT | PAGE_PWT | PAGE_PCD));
 
     flush_TLB();
 }
@@ -167,8 +168,8 @@ void io_apic_page_table_map() {
     unsigned long *addr = NULL;
 
     unsigned int phy_addr = io_apic_map.base_phy_addr;
-    pml4t = get_CR3();
-    pml4e = pml4t + pml4t_off((unsigned long) phy_addr);
+    pml4t = phy_to_vir(get_CR3());
+    pml4e = pml4t + pml4t_off((unsigned long) phy_to_vir(phy_addr));
     if (*pml4e == 0) {
         addr = kmalloc(PAGE_SIZE_4K);
         set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
