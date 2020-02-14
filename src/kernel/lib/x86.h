@@ -33,6 +33,17 @@ static inline unsigned long *get_CR3() {
     return tmp;
 }
 
+static inline unsigned long get_rflags() {
+    unsigned long tmp;
+    __asm__ __volatile__("pushfq            \n\t"
+                         "movq  (%%rsp), %0 \n\t"
+                         "popfq             \n\t"
+    :"=r"(tmp)
+    :
+    :"memory");
+    return tmp;
+}
+
 // flush Translation Look-aside Buffer
 static inline void flush_TLB() {
     unsigned long tmp;
