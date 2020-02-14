@@ -211,10 +211,18 @@ exception_handling:
 ENTRY(ret_from_intr)
 	movq	$0,	%rcx
 	cmpq	soft_irq_status(%rip), %rcx
-	jz	restore_all
+	jz	schedule
 
 soft_irq_handler:
 	callq	do_soft_irq
+
+schedule:
+	movq	$-32768, %rbx // stack size 32KB = 32768Byte
+	andq	%rsp,	%rbx
+	movl	12(%rbx), %ecx
+	testl	$2, %ecx
+	jz	restore_all
+	callq	do_sched		
 
 restore_all:
 	popq	%r15
@@ -240,6 +248,7 @@ restore_all:
 	iretq
 
 ENTRY(system_call)
+	sti
 	subq    $0x38, %rsp
 	cld
 

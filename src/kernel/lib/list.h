@@ -49,4 +49,8 @@ static inline void list_del(list_t *list) {
     __list_del(list->prev, list->next);
 }
 
+static inline int list_is_empty(list_t *list) {
+    return list == list->next && list == list->prev;
+}
+
 #endif //_LIST_H

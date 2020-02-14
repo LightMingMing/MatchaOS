@@ -11,6 +11,7 @@
 #include "../trap/gate.h"
 #include "../lib/stdio.h"
 #include "../lib/reg.h"
+#include "../lib/x86.h"
 
 #define NR_CPU 4
 
@@ -21,6 +22,7 @@
 #define PROC_UNINTERRUPTIBLE (1u<<2u)
 
 #define PROC_KERNEL_THREAD (1u<<0u)
+#define PROC_NEED_SCHEDULE (1u<<1u)
 
 #define KERNEL_CS (0x08u)
 #define KERNEL_DS (0x10u)
@@ -54,6 +56,7 @@ struct proc_struct {
     int priority;
     uint32_t state;
     uint32_t flags;
+    long run_time;
     struct proc_ctx *ctx;
     struct mm_struct *mm;
     list_t list;
@@ -70,14 +73,15 @@ struct proc_ctx init_ctx;
 
 #define INIT_PROC(proc) {   \
     .pid = 0,           \
-    .priority = 0,      \
+    .priority = 2,      \
     .state = PROC_UNINTERRUPTIBLE,  \
     .flags = PROC_KERNEL_THREAD,    \
+    .run_time = 0,      \
     .mm = &init_mm,     \
     .ctx = &init_ctx    \
 }
 
-union proc_union init_proc_union __attribute__((__section__ (".data.init_task"))) = {INIT_PROC(init_proc_union.proc)};
+union proc_union init_proc_union __attribute__((__section__ (".data.init_proc"))) = {INIT_PROC(init_proc_union.proc)};
 
 struct mm_struct init_mm = {0};
 
@@ -162,14 +166,14 @@ void __switch_to(struct proc_struct *prev, struct proc_struct *next) {
     setup_TSS(TSS_Table, init_tss[0].rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
               init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
 
+    wrmsr(0x175, next->ctx->rsp0);
     __asm__ __volatile__("movq  %%fs, %0":"=a"(prev->ctx->fs));
     __asm__ __volatile__("movq  %%gs, %0":"=a"(prev->ctx->gs));
 
     __asm__ __volatile__("movq  %0, %%fs"::"a"(next->ctx->fs));
     __asm__ __volatile__("movq  %0, %%gs"::"a"(next->ctx->gs));
 
-    print_color(GREEN, BLACK, "prev->ctx->rsp0:%#018lx\n", prev->ctx->rsp0);
-    print_color(GREEN, BLACK, "next->ctx->rsp0:%#018lx\n", next->ctx->rsp0);
+    print_color(GREEN, BLACK, "\nStack-switching: %#018lx->%#018lx\n", prev->ctx->rsp0, next->ctx->rsp0);
 }
 
 typedef unsigned long (*system_call_t)(regs_t *regs);

@@ -8,6 +8,8 @@
 #include "../trap/apic.h"
 #include "../trap/softirq.h"
 #include "../mm/memory.h"
+#include "../proc/proc.h"
+#include "../sched/sched.h"
 
 // 1s = 10E15fs (femptoseconds)
 #define FS_PER_S 1000000000000000
@@ -77,6 +79,15 @@ unsigned long jiffies = 0;
 void HPET_handler(irq_nr_t nr, regs_t *regs) {
     jiffies++;
     set_soft_irq_status(TIMER_IRQ);
+
+    struct proc_struct *current = get_current();
+
+    sched_queue.exec_jiffies -= 1;
+    current->run_time += 1;
+
+    if (sched_queue.exec_jiffies <= 0) {
+        current->flags |= PROC_NEED_SCHEDULE;
+    }
 }
 
 void do_timer(void *data) {

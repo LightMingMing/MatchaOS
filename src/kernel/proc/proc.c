@@ -4,6 +4,8 @@
 
 #include "proc.h"
 #include "../lib/x86.h"
+#include "../sched/sched.h"
+#include "../mm/slab.h"
 
 void display_mm_struct(struct mm_struct mm) {
     print_color(GREEN, BLACK, "Display mm_struct info\n");
@@ -42,6 +44,7 @@ unsigned long init(unsigned long args) {
 
     print_color(YELLOW, BLACK, "init proc is running, args:%#018lx\n", args);
 
+    current->flags = 0;
     current->ctx->rip = (unsigned long) ret_system_call;
     current->ctx->rsp = (unsigned long) current + PROC_STACK_SIZE - sizeof(regs_t);
     regs = (regs_t *) current->ctx->rsp;
@@ -56,15 +59,15 @@ unsigned long init(unsigned long args) {
 void user_level_func() {
     long ret = 0;
     char *str = "Hello, World!\n";
-    print_color(YELLOW, BLACK, "user_level_func is running\n");
 
     __asm__ __volatile__ ("leaq sysexit_ret_addr(%%rip), %%rdx  \n\t"
                           "movq %%rsp, %%rcx    \n\t"
                           "sysenter             \n\t"
                           "sysexit_ret_addr:    \n\t"
     :"=a"(ret):"0"(1), "D"(str):"memory");
-    print_color(YELLOW, BLACK, "user_level_func proc called sysenter, ret: %ld\n", ret);
-    while (1);
+    while (1) {
+        pause();
+    }
 }
 
 unsigned long system_call_func(regs_t *regs) {
@@ -72,12 +75,40 @@ unsigned long system_call_func(regs_t *regs) {
 }
 
 unsigned long do_execve(regs_t *regs) {
+    struct Page *page = NULL;
+    unsigned long phy_addr = 0x800000;
+
     regs->rdx = 0x800000; // rip
     regs->rcx = 0xa00000; // rsp
     regs->rax = 1;
     regs->ds = 0;
     regs->es = 0;
     print_color(YELLOW, BLACK, "do_execve is running\n");
+
+    unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
+    unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
+    unsigned long *addr = NULL;
+
+    pml4t = phy_to_vir(get_CR3());
+    pml4e = pml4t + pml4t_off(phy_addr);
+    if (*pml4e == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_USER_PML4T));
+    }
+
+    pdpt = phy_to_vir(*pml4e & (~0xFFUL));
+    pdpe = pdpt + pdpt_off(phy_addr);
+    if (*pdpe == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_USER_PDPT));
+    }
+
+    pdt = phy_to_vir(*pdpe & (~0xFFUL));
+    pde = pdt + pdt_off(phy_addr);
+    page = alloc_pages(1, PG_PTable_Mapped);
+    set_pdt(pde, mk_pdt(page->phy_addr, PAGE_USER_PDT));
+
+    flush_TLB();
     memcpy(user_level_func, (void *) 0x800000, 1024);
     return 0;
 }
@@ -174,8 +205,8 @@ void proc_init() {
     kernel_thread(init, 0, 0);
     init_proc_union.proc.state = PROC_RUNNABLE;
 
-    next = container_of((&current->list)->prev, struct proc_struct, list); // TODO
-    switch_to(current, next);
+//    next = container_of(list_next(&sched_queue.head_proc.list), struct proc_struct, list);
+//    switch_to(current, next);
 }
 
 int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsigned long stack_end) {
@@ -192,8 +223,9 @@ int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsign
     *proc = *get_current();
 
     list_init(&proc->list);
-    list_add_to_before(&init_proc_union.proc.list, &proc->list);
+
     proc->pid++;
+    proc->priority = 2;
     proc->state = PROC_UNINTERRUPTIBLE;
 
     ctx = (struct proc_ctx *) (proc + 1);
@@ -205,6 +237,7 @@ int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsign
     proc->ctx = ctx;
 
     proc->state = PROC_RUNNABLE;
+    insert(proc);
 
-    return 0;
+    return 1;
 }

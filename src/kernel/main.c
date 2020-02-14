@@ -1,18 +1,19 @@
 //
 // Created by 赵明明 on 2019/11/18.
 //
+#include "driver/disk.h"
+#include "driver/HPET.h"
+#include "driver/keyboard.h"
+#include "driver/mouse.h"
+#include "mm/memory.h"
+#include "mm/slab.h"
+#include "proc/smp.h"
+#include "sched/sched.h"
+#include "time/time.h"
 #include "trap/gate.h"
 #include "trap/trap.h"
 #include "trap/intr.h"
-#include "mm/memory.h"
-#include "mm/slab.h"
 #include "test.h"
-#include "driver/keyboard.h"
-#include "driver/mouse.h"
-#include "driver/disk.h"
-#include "proc/smp.h"
-#include "time/time.h"
-#include "driver/HPET.h"
 
 void Start_Kernel() {
     spin_init(&pos.lock);
@@ -20,7 +21,7 @@ void Start_Kernel() {
     test_format_print();
 
     load_TR(10U);
-    setup_TSS(TSS_Table, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
+    setup_TSS(TSS_Table, _stack_start, _stack_start, _stack_start,
               0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
               0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
               0xffff800000007c00);
@@ -43,6 +44,7 @@ void Start_Kernel() {
     test_kmalloc();
     test_create_and_destroy_slab_cache();
 
+    sched_init();
     intr_init();
     keyboard_init();
     mouse_init();
@@ -50,10 +52,10 @@ void Start_Kernel() {
     disk_init();
     test_disk();
 
-//    proc_init();
     test_cpu_info();
-    smp_init();
-    test_IPI();
+//    smp_init();
+//    test_IPI();
+    proc_init();
 
     struct Time time;
 
@@ -67,6 +69,6 @@ void Start_Kernel() {
                         time.minute, time.second);
             analysis_mousecode();
         }
-        hlt();
+        pause();
     }
 }

@@ -29,9 +29,9 @@ SECTIONS
 
 	. = ALIGN(32768);
 
-	.data.init_task :
+	.data.init_proc :
 	{
-	    *(.data.init_task)
+	    *(.data.init_proc)
 	}
 
 	.bss :

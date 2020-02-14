@@ -10,7 +10,7 @@ objects = $(bin)/head.o $(bin)/entry.o $(bin)/main.o $(bin)/printk.o $(bin)/stri
           $(bin)/trap.o $(bin)/intr.o $(bin)/pic.o $(bin)/softirq.o	\
           $(bin)/keyboard.o $(bin)/mouse.o $(bin)/HPET.o $(bin)/disk.o \
           $(bin)/memory.o $(bin)/slab.o \
-          $(bin)/cpu.o $(bin)/proc.o $(bin)/smp.o $(bin)/apu_boot.o
+          $(bin)/cpu.o $(bin)/proc.o $(bin)/smp.o $(bin)/apu_boot.o $(bin)/sched.o
 
 gcc = gcc -mcmodel=large -fno-builtin -m64 -c $< -o $@ -g
 
@@ -76,6 +76,9 @@ $(bin)/proc.o : proc/proc.c proc/proc.h
 	$(gcc)
 
 $(bin)/smp.o : proc/smp.c proc/smp.h
+	$(gcc)
+
+$(bin)/sched.o : sched/sched.c sched/sched.h
 	$(gcc)
 
 $(bin)/main.o : main.c $(bin)/printk.o $(bin)/string.o test.h
