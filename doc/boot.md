@@ -17,9 +17,6 @@
 3. `int 10h, ah=0Eh` 显示一个字符
 4. `int 10h, ah=13h` 显示字符串
 
-boot程序中, 清屏后, 设置光标位置, 并显示'Start Boot'. 效果如下图:
-![boot](image/boot.png)
-
 下图是镜像文件`matcha.img`的16进制数据, 可见第一个扇区存储的是boot引导程序, 后两个字节分别是`0xaa`, `0x55`
 ![img_hex](image/img_hex.png)
 
@@ -90,9 +87,6 @@ FAT文件系统根目录区(Root Dir)的目录项(Entry)存储着文件相关信
 
 
 确定了存放loader文件的扇区后, 就可以借助`int 13h, ah=02h`中断程序, 将扇区读取至内存中了, 这里将ES:BX设为[0x1000:0], 即将其加载至物理内存0x10000处, 之后借助跳转指令`jmp`跳转至0x10000处执行loader程序. 至此boot程序的使命也就完成了.
-
-### 执行结果
-![LoadLoader](image/load_loader.png)
 
 ## 参考资料
 1. [Microsoft FAT Specification](http://read.pudn.com/downloads77/ebook/294884/FAT32%20Spec%20%28SDA%20Contribution%29.pdf)
