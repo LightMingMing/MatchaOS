@@ -283,7 +283,8 @@ void io_apic_init() {
 
 void apic_init() {
     for (int i = 0; i < 24; i++) {
-        set_intr_gate(0x20 + i, 2, interrupt[i]);
+        // ist = 0, use legacy stack-switching mechanism
+        set_intr_gate(0x20 + i, 0, interrupt[i]);
     }
 
     // 8259A-master ICW 1-4
