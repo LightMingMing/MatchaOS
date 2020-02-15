@@ -13,7 +13,7 @@
 #include "../mm/mem.h"
 #include "../trap/gate.h"
 
-#define NR_CPU 4
+#define NR_CPUs 4
 
 #define PROC_STACK_SIZE  32768 // 32768 Byte (32KB)
 
@@ -56,6 +56,7 @@ struct proc_struct {
     int priority;
     uint32_t state;
     uint32_t flags;
+    uint32_t cpu_id;
     long run_time;
     struct proc_ctx *ctx;
     struct mm_struct *mm;
@@ -76,6 +77,7 @@ struct proc_ctx init_ctx;
     .priority = 2,      \
     .state = PROC_UNINTERRUPTIBLE,  \
     .flags = PROC_KERNEL_THREAD,    \
+    .cpu_id = 0,      \
     .run_time = 0,      \
     .mm = &init_mm,     \
     .ctx = &init_ctx    \
@@ -134,7 +136,7 @@ struct tss_struct {
     .io_map_base_addr = 0       \
 }
 
-struct tss_struct init_tss[NR_CPU] = {[0 ... NR_CPU - 1]=INIT_TSS};
+struct tss_struct init_tss[NR_CPUs] = {[0 ... NR_CPUs - 1]=INIT_TSS};
 
 static inline struct proc_struct *get_current() {
     struct proc_struct *current = NULL;
@@ -162,9 +164,7 @@ static inline struct proc_struct *get_current() {
             :"memory")
 
 void __switch_to(struct proc_struct *prev, struct proc_struct *next) {
-    init_tss[0].rsp0 = next->ctx->rsp0;
-    setup_TSS(TSS_Table, init_tss[0].rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
-              init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
+    init_tss[next->cpu_id].rsp0 = next->ctx->rsp0;
 
     wrmsr(0x175, next->ctx->rsp0);
     __asm__ __volatile__("movq  %%fs, %0":"=a"(prev->ctx->fs));

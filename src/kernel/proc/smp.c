@@ -25,7 +25,8 @@ void send_IPI(struct ICR_Entry *entry) {
 }
 
 void smp_init() {
-    void *tss;
+    void *stack;
+    unsigned long ist;
 
     print_color(YELLOW, BLACK, "AP Boot start addr: %#018lx\n", &_APU_boot_start);
     print_color(YELLOW, BLACK, "AP Boot end   addr: %#018lx\n", &_APU_boot_end);
@@ -49,15 +50,22 @@ void smp_init() {
 
     spin_init(&smp_lock);
 
+    ist = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE);
+    setup_TSS((unsigned int *) &init_tss[0], _stack_start, _stack_start, _stack_start,
+              ist, ist, ist, ist, ist, ist, ist);
+
     while (global_i < 3) {
         spin_lock(&smp_lock);
         global_i++;
 
-        _stack_start = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE); //  head.S
-        tss = kmalloc(128);
-        set_tss_desc(10 + global_i * 2, tss);
-        setup_TSS(tss, _stack_start, _stack_start, _stack_start, _stack_start, _stack_start, _stack_start, _stack_start,
-                  _stack_start, _stack_start, _stack_start);
+        stack = kmalloc(PROC_STACK_SIZE);
+        ((struct proc_struct *) stack)->cpu_id = global_i;
+        _stack_start = (unsigned long) (stack + PROC_STACK_SIZE); //  head.S
+        ist = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE);
+
+        set_tss_desc(10 + global_i * 2, &init_tss[global_i]);
+        setup_TSS((unsigned int *) &init_tss[global_i], _stack_start, _stack_start, _stack_start,
+                  ist, ist, ist, ist, ist, ist, ist);
 
         entry.IPI_vector = start_up_code >> 12U;
         entry.delivery_mode = DELIVERY_MODE_START_UP;

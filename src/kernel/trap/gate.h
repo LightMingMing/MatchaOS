@@ -11,7 +11,6 @@ struct gate_struct {
 
 extern unsigned long GDT_Table[109];
 extern struct gate_struct IDT_Table[];
-extern unsigned int TSS_Table[26];
 
 #define load_TR(idx)   \
     __asm__ __volatile__ ("ltr  %%ax"::"a" ((idx) << 3u):"memory")

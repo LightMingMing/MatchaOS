@@ -65,7 +65,7 @@ setup_next_int_desc:
 	jne	setup_next_int_desc
 
 setup_TSS:
-	leaq	TSS_Table(%rip), %rdx
+	leaq	init_tss(%rip), %rdx
 	xorq	%rax, %rax
 	xorq	%rcx, %rcx
 	mov	$0x89, %ax
@@ -248,12 +248,12 @@ IDT_LIMIT:	.word IDT_END - IDT_Table - 1
 IDT_BASE:	.quad IDT_Table
 
 // init TSS
-.globl TSS_Table
+// .globl TSS_Table
 
-TSS_Table:
-	.fill 13, 8, 0
-TSS_END:
+// TSS_Table:
+//	.fill 13, 8, 0
+// TSS_END:
 
-TSS_PTR:
-TSS_LIMIT:	.word TSS_END - TSS_Table - 1
-TSS_BASE:	.quad TSS_Table
+// TSS_PTR:
+// TSS_LIMIT:	.word TSS_END - TSS_Table - 1
+// TSS_BASE:	.quad TSS_Table

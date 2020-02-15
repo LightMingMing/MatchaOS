@@ -161,7 +161,6 @@ int kernel_thread(unsigned long (*entry)(unsigned long), unsigned long arg, unsi
 }
 
 void proc_init() {
-    struct proc_struct *next = NULL;
     struct proc_struct *current = get_current();
 
     init_mm.pml4t = (pml4t_t *) get_CR3();
@@ -192,16 +191,12 @@ void proc_init() {
     wrmsr(0x174, KERNEL_CS);
     wrmsr(0x175, current->ctx->rsp0);
     wrmsr(0x176, (unsigned long) system_call);
-    setup_TSS(TSS_Table, init_ctx.rsp0, init_tss[0].rsp1, init_tss[0].rsp2, init_tss[0].ist1, init_tss[0].ist2,
-              init_tss[0].ist3, init_tss[0].ist4, init_tss[0].ist5, init_tss[0].ist6, init_tss[0].ist7);
-    init_tss[0].rsp0 = init_ctx.rsp0;
+
+    init_tss[current->cpu_id].rsp0 = init_ctx.rsp0;
 
     list_init(&init_proc_union.proc.list);
     kernel_thread(init, 0, 0);
     init_proc_union.proc.state = PROC_RUNNABLE;
-
-//    next = container_of(list_next(&sched_queue.head_proc.list), struct proc_struct, list);
-//    switch_to(current, next);
 }
 
 int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsigned long stack_end) {
