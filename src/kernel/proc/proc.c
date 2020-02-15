@@ -90,17 +90,13 @@ unsigned long do_execve(regs_t *regs) {
 
     pml4t = phy_to_vir(get_CR3());
     pml4e = pml4t + pml4t_off(phy_addr);
-    if (*pml4e == 0) {
-        addr = kmalloc(PAGE_SIZE_4K);
-        set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_USER_PML4T));
-    }
+    addr = kmalloc(PAGE_SIZE_4K);
+    set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_USER_PML4T));
 
     pdpt = phy_to_vir(*pml4e & (~0xFFUL));
     pdpe = pdpt + pdpt_off(phy_addr);
-    if (*pdpe == 0) {
-        addr = kmalloc(PAGE_SIZE_4K);
-        set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_USER_PDPT));
-    }
+    addr = kmalloc(PAGE_SIZE_4K);
+    set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_USER_PDPT));
 
     pdt = phy_to_vir(*pdpe & (~0xFFUL));
     pde = pdt + pdt_off(phy_addr);

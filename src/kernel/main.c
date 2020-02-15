@@ -40,21 +40,21 @@ void Start_Kernel() {
     page_table_init();
 
     test_alloc_pages(64);
-
     test_kmalloc();
     test_create_and_destroy_slab_cache();
 
-    sched_init();
     intr_init();
     keyboard_init();
     mouse_init();
-    HPET_init();
     disk_init();
     test_disk();
 
     test_cpu_info();
-//    smp_init();
-//    test_IPI();
+    sched_init();
+    smp_init();
+    test_IPI();
+
+    HPET_init();
     proc_init();
 
     struct Time time;

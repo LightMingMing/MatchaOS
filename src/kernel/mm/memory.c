@@ -143,9 +143,9 @@ void memory_init() {
         page_init(p, PG_PTable_Mapped | PG_Kernel_Init | PG_Kernel);
     }
 
-     unsigned long *global_cr3 = get_CR3();
+    unsigned long *global_cr3 = get_CR3();
     for (int i = 0; i < 10; i++) {
-         *(phy_to_vir(global_cr3) + i) = 0UL;
+        *(phy_to_vir(global_cr3) + i) = 0UL;
     }
     flush_TLB();
 }
@@ -187,6 +187,24 @@ void page_table_init() {
             }
         }
     }
+
+    pml4e = pml4t + pml4t_off(0);
+    if (*pml4e == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pml4t(pml4e, mk_pml4t(vir_to_phy(addr), PAGE_KERNEL_PML4T));
+    }
+
+    pdpt = phy_to_vir(*pml4e & (~0xFFUL));
+    pdpe = pdpt + pdpt_off(0);
+    if (*pdpe == 0) {
+        addr = kmalloc(PAGE_SIZE_4K);
+        set_pdpt(pdpe, mk_pdpt(vir_to_phy(addr), PAGE_KERNEL_PDPT));
+    }
+
+    pdt = phy_to_vir(*pdpe & (~0xFFUL));
+    pde = pdt + pdt_off(0);
+    set_pdt(pde, mk_pdt(0, PAGE_KERNEL_PDT));
+
     flush_TLB();
 }
 
