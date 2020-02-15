@@ -2,7 +2,7 @@
 // Created by 赵明明 on 2019/12/29.
 //
 
-#include "memory.h"
+#include "mem.h"
 #include "slab.h"
 #include "../lib/bit.h"
 #include "../lib/stdio.h"

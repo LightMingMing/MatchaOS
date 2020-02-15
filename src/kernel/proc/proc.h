@@ -10,7 +10,7 @@
 #include "../lib/reg.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
-#include "../mm/memory.h"
+#include "../mm/mem.h"
 #include "../trap/gate.h"
 
 #define NR_CPU 4

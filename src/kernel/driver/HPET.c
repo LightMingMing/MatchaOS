@@ -5,7 +5,7 @@
 #include "HPET.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
-#include "../mm/memory.h"
+#include "../mm/mem.h"
 #include "../trap/apic.h"
 #include "../trap/softirq.h"
 #include "../proc/proc.h"

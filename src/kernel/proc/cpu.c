@@ -5,7 +5,7 @@
 #include "cpu.h"
 #include "../lib/string.h"
 #include "../lib/x86.h"
-#include "../mm/memory.h"
+#include "../mm/mem.h"
 
 char *get_vendor(char *vendor) {
     uint32_t eax, ebx, ecx, edx;

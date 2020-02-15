@@ -5,7 +5,7 @@
 #include "driver/HPET.h"
 #include "driver/keyboard.h"
 #include "driver/mouse.h"
-#include "mm/memory.h"
+#include "mm/mem.h"
 #include "mm/slab.h"
 #include "proc/smp.h"
 #include "sched/sched.h"

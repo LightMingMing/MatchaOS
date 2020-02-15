@@ -5,7 +5,7 @@
 #include "gate.h"
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
-#include "../mm/memory.h"
+#include "../mm/mem.h"
 #include "../mm/slab.h"
 #include "../proc/cpu.h"
 
