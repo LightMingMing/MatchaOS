@@ -53,3 +53,14 @@ void do_sched() {
         insert(current);
     }
 }
+
+void jiffies_down() {
+    struct proc_struct *current = get_current();
+
+    sched_queue[current->cpu_id].exec_jiffies -= 1;
+    current->run_time += 1;
+
+    if (sched_queue[current->cpu_id].exec_jiffies <= 0) {
+        current->flags |= PROC_NEED_SCHEDULE;
+    }
+}

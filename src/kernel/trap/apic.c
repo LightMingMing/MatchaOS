@@ -311,8 +311,6 @@ void apic_init() {
     io_apic_init();
 
     memset(IRQ_Table, 0, sizeof(irq_desc_t) * NR_IRQs);
-
-    sti();
 }
 
 void local_apic_edge_ack(irq_nr_t nr) {
@@ -332,8 +330,12 @@ void handle_IRQ(irq_nr_t nr, regs_t *regs) {
         if (irq->ctl != NULL && irq->ctl->ack != NULL) {
             irq->ctl->ack(nr);
         }
-    } else {
-        print_color(GREEN, BLACK, "AP %d received IPI: %d\n", rdmmio(APIC_ID_REG) >> 24UL, nr);
+    }
+    if (nr >= 0xc8) {
         local_apic_edge_ack(nr);
+        IPI_desc_t *ipi = &IPI_Table[nr - 0xc8];
+        if (ipi->handler != NULL) {
+            ipi->handler(nr, regs);
+        }
     }
 }

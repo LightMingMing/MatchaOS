@@ -478,7 +478,7 @@ void test_IPI() {
     entry.reserved3 = 0;
 
     // AP 1
-    entry.IPI_vector = 0xC8;
+    entry.IPI_vector = 0xC9;
     entry.dest_field = 1;
     send_IPI(&entry);
 
@@ -498,7 +498,7 @@ void test_IPI() {
     }
 
     // AP 3
-    entry.dest_field = 0xCA;
+    entry.dest_field = 0xC9;
     entry.dest_field = 3;
     send_IPI(&entry);
 

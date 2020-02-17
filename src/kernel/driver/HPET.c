@@ -6,9 +6,8 @@
 #include "../lib/stdio.h"
 #include "../lib/x86.h"
 #include "../mm/mem.h"
-#include "../trap/apic.h"
+#include "../proc/smp.h"
 #include "../trap/softirq.h"
-#include "../proc/proc.h"
 #include "../sched/sched.h"
 
 // 1s = 10E15fs (femptoseconds)
@@ -77,17 +76,22 @@ irq_ctl_t HPET_ctl = {
 unsigned long jiffies = 0;
 
 void HPET_handler(irq_nr_t nr, regs_t *regs) {
-    jiffies++;
-    set_soft_irq_status(TIMER_IRQ);
+    print_color(YELLOW, BLACK, "(%d) ", jiffies++);
 
-    struct proc_struct *current = get_current();
+//    set_soft_irq_status(TIMER_IRQ);
 
-    sched_queue[current->cpu_id].exec_jiffies -= 1;
-    current->run_time += 1;
+    struct ICR_Entry entry;
+    memset(&entry, 0, sizeof(struct ICR_Entry));
+    entry.IPI_vector = 0xC8;
+    entry.delivery_mode = DELIVERY_MODE_FIXED;
+    entry.dest_mode = DEST_MODE_PHYSICAL;
+    entry.delivery_status = DELIVERY_STATUS_IDLE;
+    entry.level = LEVEL_ASSERT;
+    entry.trigger_mode = TRIGGER_MODE_EDGE;
+    entry.dest_shorthand = SHORTHAND_ALL_EX_SELF;
+    send_IPI(&entry);
 
-    if (sched_queue[current->cpu_id].exec_jiffies <= 0) {
-        current->flags |= PROC_NEED_SCHEDULE;
-    }
+    jiffies_down();
 }
 
 void do_timer(void *data) {

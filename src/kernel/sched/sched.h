@@ -24,4 +24,6 @@ void sched_init();
 
 void do_sched();
 
+void jiffies_down();
+
 #endif //_SCHED_H

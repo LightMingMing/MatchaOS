@@ -47,16 +47,16 @@ void Start_Kernel() {
     keyboard_init();
     mouse_init();
     disk_init();
-    test_disk();
 
     test_cpu_info();
-    sched_init();
-    smp_init();
-    test_IPI();
 
+    sched_init();
+    sti();
+    smp_init();
     HPET_init();
     proc_init();
 
+    test_disk();
     struct Time time;
 
     while (1) {

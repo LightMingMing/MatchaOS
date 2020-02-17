@@ -80,7 +80,9 @@ typedef struct {
 } irq_desc_t;
 
 typedef struct {
+    char *name;
 
+    void (*handler)(irq_nr_t nr, regs_t *regs);
 } IPI_desc_t;
 
 #define NR_IRQs  24
@@ -109,6 +111,20 @@ int unregister_irq(irq_nr_t nr) {
     irq->name = NULL;
     irq->ctl = NULL;
     irq->handler = NULL;
+    return 1;
+}
+
+int register_IPI(uint8_t nr, char *name, void(*handler)(uint8_t, regs_t *)) {
+    IPI_desc_t *ipi = &IPI_Table[nr - 200];
+    ipi->name = name;
+    ipi->handler = handler;
+    return 1;
+}
+
+int unregister_IPI(uint8_t nr) {
+    IPI_desc_t *ipi = &IPI_Table[nr - 200];
+    ipi->name = NULL;
+    ipi->handler = NULL;
     return 1;
 }
 

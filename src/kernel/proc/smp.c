@@ -10,9 +10,14 @@
 #include "../lib/x86.h"
 #include "../mm/mem.h"
 #include "../mm/slab.h"
+#include "../sched/sched.h"
 
 uint8_t global_i;
 spinlock_t smp_lock;
+
+void IPI_0xC8(uint8_t nr, regs_t *regs) {
+    jiffies_down();
+}
 
 void send_IPI(struct ICR_Entry *entry) {
     unsigned long value = *(unsigned long *) entry;
@@ -70,8 +75,9 @@ void smp_init() {
     }
 
     for (int i = 0; i < 10; i++) {
-        set_intr_gate(0xC8 + i, 2, IPI[i]);
+        set_intr_gate(0xC8 + i, 0, IPI[i]);
     }
+    register_IPI(0xC8, "Sched IPI", &IPI_0xC8);
 }
 
 void Start_SMP() {

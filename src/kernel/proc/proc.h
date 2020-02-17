@@ -181,7 +181,8 @@ void __switch_to(struct proc_struct *prev, struct proc_struct *next) {
     __asm__ __volatile__("movq  %0, %%fs"::"a"(next->ctx->fs));
     __asm__ __volatile__("movq  %0, %%gs"::"a"(next->ctx->gs));
 
-    print_color(GREEN, BLACK, "\nStack-switching: %#018lx->%#018lx\n", prev->ctx->rsp0, next->ctx->rsp0);
+    int fd = prev->cpu_id == 0 ? BLACK : BLUE;
+    print_color(fd, WHITE, "\nStack-switching: %#018lx->%#018lx\n", prev->ctx->rsp0, next->ctx->rsp0);
 }
 
 typedef unsigned long (*system_call_t)(regs_t *regs);
