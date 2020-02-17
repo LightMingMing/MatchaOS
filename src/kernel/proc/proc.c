@@ -42,20 +42,9 @@ void user_level_func() {
     }
 }
 
-unsigned long system_call_func(regs_t *regs) {
-    return system_call_table[regs->rax](regs);
-}
-
-unsigned long do_execve(regs_t *regs) {
+void user_level_page_table_map() {
     struct Page *page = NULL;
     unsigned long phy_addr = 0x800000;
-
-    regs->rdx = 0x800000; // rip
-    regs->rcx = 0xa00000; // rsp
-    regs->rax = 1;
-    regs->ds = 0;
-    regs->es = 0;
-    print_color(YELLOW, BLACK, "do_execve is running\n");
 
     unsigned long *pml4t = NULL, *pdpt = NULL, *pdt = NULL; // base
     unsigned long *pml4e = NULL, *pdpe = NULL, *pde = NULL; // base + offset
@@ -78,6 +67,19 @@ unsigned long do_execve(regs_t *regs) {
 
     flush_TLB();
     memcpy(user_level_func, (void *) 0x800000, 1024);
+}
+
+unsigned long system_call_func(regs_t *regs) {
+    return system_call_table[regs->rax](regs);
+}
+
+unsigned long do_execve(regs_t *regs) {
+    regs->rdx = 0x800000; // rip
+    regs->rcx = 0xa00000; // rsp
+    regs->rax = 1;
+    regs->ds = 0;
+    regs->es = 0;
+    print_color(YELLOW, BLACK, "do_execve is running\n");
     return 0;
 }
 

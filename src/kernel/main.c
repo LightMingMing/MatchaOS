@@ -53,6 +53,8 @@ void Start_Kernel() {
     sched_init();
     sti();
     smp_init();
+    user_level_page_table_map();
+
     HPET_init();
     proc_init();
 

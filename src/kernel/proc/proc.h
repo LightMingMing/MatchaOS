@@ -203,6 +203,8 @@ system_call_t system_call_table[128] = {
         [2 ... 127] = no_system_call
 };
 
+void user_level_page_table_map();
+
 void proc_init();
 
 int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsigned long stack_end);
