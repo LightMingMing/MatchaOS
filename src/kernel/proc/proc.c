@@ -6,33 +6,6 @@
 #include "../mm/slab.h"
 #include "../sched/sched.h"
 
-void display_mm_struct(struct mm_struct mm) {
-    print_color(GREEN, BLACK, "Display mm_struct info\n");
-    println("code:   [%#018lx, %#018lx)", mm.start_code, mm.end_code);
-    println("data:   [%#018lx, %#018lx)", mm.start_data, mm.end_data);
-    println("rodata: [%#018lx, %#018lx)", mm.start_rodata, mm.end_rodata);
-    println("brk:    [%#018lx, %#018lx)", mm.start_brk, mm.end_brk);
-    println("start_stack: %#018lx", mm.start_stack);
-    println("pml4t:       %#018lx", mm.pml4t);
-}
-
-void display_proc_ctx(struct proc_ctx ctx) {
-    print_color(GREEN, BLACK, "Display proc_ctx info\n");
-    println("ctx.rsp0: %#018lx", ctx.rsp0);
-    println("ctx.rsp:  %#018lx", ctx.rsp);
-    println("ctx.fs:   %#018lx", ctx.fs);
-    println("ctx.gs:   %#018lx", ctx.gs);
-}
-
-void display_tss_struct(struct tss_struct tss) {
-    print_color(GREEN, BLACK, "Display tss_struct info\n");
-    println("tss.rsp0: %#018lx", tss.rsp0);
-    println("tss.rsp1: %#018lx", tss.rsp1);
-    println("tss.rsp2: %#018lx", tss.rsp2);
-    println("tss.ist1: %#018lx", tss.ist1);
-    println("tss.ist2: %#018lx", tss.ist2);
-}
-
 extern void ret_system_call();
 
 extern void system_call();
@@ -148,7 +121,6 @@ int kernel_thread(unsigned long (*entry)(unsigned long), unsigned long arg, unsi
     memset(&regs, 0, sizeof(regs_t));
 
     regs.rbx = (unsigned long) entry;
-    print_color(YELLOW, BLACK, "rbx: %#018lx\n", regs.rbx);
     regs.rdx = arg;
 
     regs.ds = KERNEL_DS;
@@ -162,41 +134,48 @@ int kernel_thread(unsigned long (*entry)(unsigned long), unsigned long arg, unsi
 
 void proc_init() {
     struct proc_struct *current = get_current();
+    uint64_t stack_start = (uint64_t) current + PROC_STACK_SIZE;
 
-    init_mm.pml4t = (pml4t_t *) get_CR3();
-    init_mm.start_code = mem_info.start_code;
-    init_mm.end_code = mem_info.end_code;
-    init_mm.start_data = (unsigned long) &_data;
-    init_mm.end_data = mem_info.end_data;
-    init_mm.start_rodata = (unsigned long) &_rodata;
-    init_mm.end_rodata = (unsigned long) &_erodata;
-    init_mm.start_brk = 0;
-    init_mm.end_brk = mem_info.end_brk;
-    init_mm.start_stack = _stack_start;
+    int fd = current->cpu_id == 0 ? BLACK : BLUE;
+    print_color(fd, WHITE, "current: %#018lx, stack_start: %#018lx\n", current, stack_start);
 
-    display_mm_struct(init_mm);
-    display_proc_ctx(init_ctx);
-    display_tss_struct(init_tss[0]);
-    println("get_current():   %#018lx", current);
-    println("init proc union: %#018lx", &init_proc_union);
-    println("union.proc:      %#018lx", &init_proc_union.proc);
-    println("&union.proc.ctx: %#018lx", &(init_proc_union.proc.ctx));
-    println("&union.proc.mm:  %#018lx", &(init_proc_union.proc.mm));
-    println("union.proc.ctx:  %#018lx", (init_proc_union.proc.ctx));
-    println("union.proc.mm:   %#018lx", (init_proc_union.proc.mm));
-    println("union.stack:     %#018lx", init_proc_union.stack);
-    println("init_ctx:        %#018lx", &init_ctx);
-    println("init_mm:         %#018lx", &init_mm);
+    current->priority = 2;
+    current->state = PROC_RUNNABLE;
+    current->flags = PROC_KERNEL_THREAD;
+    current->run_time = 0;
+    list_init(&current->list);
+
+    if (current->cpu_id == 0) {
+        init_mm.pml4t = (pml4t_t *) get_CR3();
+        init_mm.start_code = mem_info.start_code;
+        init_mm.end_code = mem_info.end_code;
+        init_mm.start_data = (unsigned long) &_data;
+        init_mm.end_data = mem_info.end_data;
+        init_mm.start_rodata = (unsigned long) &_rodata;
+        init_mm.end_rodata = (unsigned long) &_erodata;
+        init_mm.start_brk = 0;
+        init_mm.end_brk = mem_info.end_brk;
+        init_mm.start_stack = stack_start;
+    }
+    current->mm = &init_mm;
+
+    if (current->cpu_id > 0) {
+        current->ctx = (struct proc_ctx *) (current + 1);
+        memset(current->ctx, 0, sizeof(struct proc_ctx));
+        current->ctx->rsp0 = stack_start;
+        current->ctx->rsp = stack_start;
+        current->ctx->fs = KERNEL_DS;
+        current->ctx->gs = KERNEL_DS;
+    }
+
+    init_proc[current->cpu_id] = current;
+    init_tss[current->cpu_id].rsp0 = stack_start;
 
     wrmsr(0x174, KERNEL_CS);
-    wrmsr(0x175, current->ctx->rsp0);
+    wrmsr(0x175, stack_start);
     wrmsr(0x176, (unsigned long) system_call);
 
-    init_tss[current->cpu_id].rsp0 = init_ctx.rsp0;
-
-    list_init(&init_proc_union.proc.list);
     kernel_thread(init, 0, 0);
-    init_proc_union.proc.state = PROC_RUNNABLE;
 }
 
 int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsigned long stack_end) {
@@ -204,9 +183,7 @@ int do_fork(regs_t *regs, unsigned long flags, unsigned long stack_start, unsign
     struct proc_ctx *ctx = NULL;
     struct Page *page = NULL;
 
-    print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bit_map);
     page = alloc_pages(1, PG_PTable_Mapped | PG_Kernel);
-    print_color(WHITE, BLACK, "bitmap:%#018lx\n", *mem_info.bit_map);
 
     proc = (struct proc_struct *) phy_to_vir(page->phy_addr);
     memset(proc, 0, sizeof(struct proc_struct));

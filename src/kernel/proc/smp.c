@@ -25,12 +25,6 @@ void send_IPI(struct ICR_Entry *entry) {
 }
 
 void smp_init() {
-    void *stack;
-    unsigned long ist;
-
-    print_color(YELLOW, BLACK, "AP Boot start addr: %#018lx\n", &_APU_boot_start);
-    print_color(YELLOW, BLACK, "AP Boot end   addr: %#018lx\n", &_APU_boot_end);
-
     uint32_t start_up_code = 0x20000; // < 1M
     memcpy(&_APU_boot_start, (void *) phy_to_vir(start_up_code), &_APU_boot_end - &_APU_boot_start);
 
@@ -50,7 +44,7 @@ void smp_init() {
 
     spin_init(&smp_lock);
 
-    ist = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE);
+    unsigned long ist = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE);
     setup_TSS((unsigned int *) &init_tss[0], _stack_start, _stack_start, _stack_start,
               ist, ist, ist, ist, ist, ist, ist);
 
@@ -58,9 +52,7 @@ void smp_init() {
         spin_lock(&smp_lock);
         global_i++;
 
-        stack = kmalloc(PROC_STACK_SIZE);
-        ((struct proc_struct *) stack)->cpu_id = global_i;
-        _stack_start = (unsigned long) (stack + PROC_STACK_SIZE); //  head.S
+        _stack_start = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE); //  head.S
         ist = (unsigned long) (kmalloc(PROC_STACK_SIZE) + PROC_STACK_SIZE);
 
         set_tss_desc(10 + global_i * 2, &init_tss[global_i]);
@@ -86,8 +78,6 @@ void Start_SMP() {
     uint8_t x2APIC;
     uint8_t EOI_suppress; // whether or not support EOI-broadcast suppression
 
-    load_TR(10U + global_i * 2);
-    sti();
     print_color(BLACK, WHITE, "AP started... [%d]\n", rdmmio(APIC_ID_REG) >> 24UL);
 
     x2APIC = x2APIC_supported();
@@ -139,7 +129,13 @@ void Start_SMP() {
         wrmmio(SVR, rdmmio(SVR) | (1UL << 8UL) | (EOI_suppress ? (1UL << 12UL) : 0));
     }
 
+    get_current()->cpu_id = global_i;
+    proc_init();
+
     spin_unlock(&smp_lock);
+
+    load_TR(10U + global_i * 2);
+    sti();
 
     while (1) {
         hlt();

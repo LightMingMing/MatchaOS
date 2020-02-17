@@ -14,7 +14,7 @@ typedef struct {
     struct proc_struct head_proc;
 } sched_queue_t;
 
-sched_queue_t sched_queue;
+sched_queue_t sched_queue[NR_CPUs];
 
 struct proc_struct *get_next_proc();
 

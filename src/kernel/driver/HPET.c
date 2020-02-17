@@ -82,10 +82,10 @@ void HPET_handler(irq_nr_t nr, regs_t *regs) {
 
     struct proc_struct *current = get_current();
 
-    sched_queue.exec_jiffies -= 1;
+    sched_queue[current->cpu_id].exec_jiffies -= 1;
     current->run_time += 1;
 
-    if (sched_queue.exec_jiffies <= 0) {
+    if (sched_queue[current->cpu_id].exec_jiffies <= 0) {
         current->flags |= PROC_NEED_SCHEDULE;
     }
 }

@@ -68,6 +68,8 @@ union proc_union {
     uint64_t stack[PROC_STACK_SIZE / sizeof(uint64_t)];
 }__attribute__((aligned (8)));
 
+struct proc_struct *init_proc[NR_CPUs];
+
 struct mm_struct init_mm;
 
 struct proc_ctx init_ctx;
@@ -77,7 +79,7 @@ struct proc_ctx init_ctx;
     .priority = 2,      \
     .state = PROC_UNINTERRUPTIBLE,  \
     .flags = PROC_KERNEL_THREAD,    \
-    .cpu_id = 0,      \
+    .cpu_id = 0,        \
     .run_time = 0,      \
     .mm = &init_mm,     \
     .ctx = &init_ctx    \
@@ -96,6 +98,8 @@ struct proc_ctx init_ctx = {
         .trap_nr = 0,
         .error_code = 0
 };
+
+struct proc_struct *init_proc[NR_CPUs] = {&init_proc_union.proc, 0};
 
 // 64-Bit TSS Format
 struct tss_struct {
@@ -142,6 +146,10 @@ static inline struct proc_struct *get_current() {
     struct proc_struct *current = NULL;
     __asm__ __volatile__ ("andq %%rsp, %0":"=r"(current):"0"(~32767UL));
     return current;
+}
+
+static inline int get_cpu_id() {
+    return get_current()->cpu_id;
 }
 
 #define switch_to(prev, next)       \
