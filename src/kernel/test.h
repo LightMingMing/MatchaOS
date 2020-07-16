@@ -150,7 +150,7 @@ void test_cpu_info() {
         print_color(YELLOW, BLACK, "Num of Levels is %d, APIC ID of current processor is %010lx\n", ecx & 0xFFU, edx);
     }
 
-    uint8_t logical_APIC_ID = rdmmio(LDR) >> 24U;
+    uint8_t logical_APIC_ID = rdmmio(APIC_ID_REG) >> 24U;
     print_color(YELLOW, BLACK, "Logical APIC ID: %d\n", logical_APIC_ID);
     uint8_t model = rdmmio(DFR) >> 28U;
     print_color(YELLOW, BLACK, "Model: %d, %s\n", model, model == FLAT_MODEL ? "Flat" : "Cluster");
