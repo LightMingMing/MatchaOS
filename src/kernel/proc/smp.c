@@ -6,9 +6,6 @@
 #include "proc.h"
 #include "smp.h"
 #include "spinlock.h"
-#include "../lib/stdio.h"
-#include "../lib/x86.h"
-#include "../mm/mem.h"
 #include "../mm/slab.h"
 #include "../sched/sched.h"
 
@@ -53,7 +50,7 @@ void smp_init() {
     setup_TSS((unsigned int *) &init_tss[0], _stack_start, _stack_start, _stack_start,
               ist, ist, ist, ist, ist, ist, ist);
 
-    while (global_i < 3) {
+    while (global_i < NR_CPUs - 1) {
         spin_lock(&smp_lock);
         global_i++;
 
@@ -81,12 +78,9 @@ void smp_init() {
 }
 
 void Start_SMP() {
-    uint8_t x2APIC;
-    uint8_t EOI_suppress; // whether or not support EOI-broadcast suppression
-
     print_color(BLACK, WHITE, "AP started... [%d]\n", rdmmio(APIC_ID_REG) >> 24UL);
 
-    x2APIC = x2APIC_supported();
+    uint8_t x2APIC = x2APIC_supported();
     // IA32_APIC_BASE MSR (MSR address 1BH)
     unsigned long value = get_IA32_APIC_BASE();
     // APIC Global Enable flag: bit 11
@@ -102,7 +96,7 @@ void Start_SMP() {
     // Suppress EOI-broadcasts: bit 24
     // Indicates whether software can inhibit the broadcast of EOI message
     // by setting bit 12 of the Spurious Interrupt Vector Register.
-    EOI_suppress = value >> 24UL & 0x1U;
+    uint8_t EOI_suppress = value >> 24UL & 0x1U; // whether or not support EOI-broadcast suppression
 
     if (x2APIC) {
         // Mask all interrupts in LVT

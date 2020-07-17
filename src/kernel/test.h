@@ -148,6 +148,24 @@ void test_cpu_info() {
             }
         }
         print_color(YELLOW, BLACK, "Num of Levels is %d, APIC ID of current processor is %010lx\n", ecx & 0xFFU, edx);
+    } else {
+        // Logical processors in a package
+        uint32_t ebx = get_cpuid_ebx(1, 0);
+        uint8_t maxLPIDsPerPackage = ebx >> 16U & 0xFFU;
+        print_color(GREEN, BLACK, "Logical processors per physical package: %d\n", maxLPIDsPerPackage);
+
+        // cores in a package
+        // Address size for CORE_ID
+        eax = get_cpuid_eax(4, 0);
+        uint8_t maxCoreIDsPerPackage = (eax >> 26U) + 1;
+        print_color(GREEN, BLACK, "Cores per physical package: %d\n", maxCoreIDsPerPackage);
+
+        // Address size for SMT_ID
+        print_color(GREEN, BLACK, "Logical processors per core: %d\n", maxLPIDsPerPackage / maxCoreIDsPerPackage);
+
+        // CPUID.1.EBX[31:24] initial APIC ID
+        ebx = get_cpuid_ebx(1, 0);
+        print_color(GREEN, BLACK, "Initial APIC ID: %d\n", (ebx >> 24U) & 0xFFU);
     }
 
     uint8_t logical_APIC_ID = rdmmio(APIC_ID_REG) >> 24U;
