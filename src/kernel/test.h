@@ -151,17 +151,27 @@ void test_cpu_info() {
     } else {
         // Logical processors in a package
         uint32_t ebx = get_cpuid_ebx(1, 0);
-        uint8_t maxLPIDsPerPackage = ebx >> 16U & 0xFFU;
-        print_color(GREEN, BLACK, "Logical processors per physical package: %d\n", maxLPIDsPerPackage);
+        uint8_t max_LPIDs_per_package = ebx >> 16U & 0xFFU;
+        print_color(GREEN, BLACK, "Logical processors per physical package: %d\n", max_LPIDs_per_package);
 
         // cores in a package
         // Address size for CORE_ID
         eax = get_cpuid_eax(4, 0);
-        uint8_t maxCoreIDsPerPackage = (eax >> 26U) + 1;
-        print_color(GREEN, BLACK, "Cores per physical package: %d\n", maxCoreIDsPerPackage);
+        uint8_t max_cores_per_package = (eax >> 26U) + 1;
+        uint8_t CORE_ID_mask_width = mask_width(max_cores_per_package);
 
         // Address size for SMT_ID
-        print_color(GREEN, BLACK, "Logical processors per core: %d\n", maxLPIDsPerPackage / maxCoreIDsPerPackage);
+        uint8_t LPIDs_per_core = max_LPIDs_per_package / max_cores_per_package;
+        uint8_t SMT_ID_mask_width = mask_width(LPIDs_per_core);
+        uint8_t SMT_ID_mask_bits = (uint8_t) mask_bits(SMT_ID_mask_width, 0);
+
+        uint8_t CORE_ID_mask_bits = (uint8_t) mask_bits(CORE_ID_mask_width, SMT_ID_mask_width);
+
+        print_color(GREEN, BLACK, "Number of Logical Processors (SMT) / Core: %d, mask width %d, mask bits %#02X\n",
+                    LPIDs_per_core, SMT_ID_mask_width, SMT_ID_mask_bits);
+
+        print_color(GREEN, BLACK, "Number of Cores / Physical Package: %d, mask width %d, mask bits %#02X\n",
+                    max_cores_per_package, CORE_ID_mask_width, CORE_ID_mask_bits);
 
         // CPUID.1.EBX[31:24] initial APIC ID
         ebx = get_cpuid_ebx(1, 0);

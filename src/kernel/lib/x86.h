@@ -130,4 +130,19 @@ static inline void wrmsr(unsigned long addr, unsigned long value) {
     __asm__ __volatile__("wrmsr"::"d"(value >> 32U), "a"(value & 0xffffffff), "c"(addr):"memory");
 }
 
+static inline unsigned mask_width(unsigned int max_count) {
+    unsigned ret;
+    __asm__ __volatile__("decl %1\n\t"
+                         "bsrl %1, %0\n\t"
+                         "jz 1f\n\t"
+                         "incl %0\n\t"
+                         "1:"
+    :"=c"(ret):"a"(max_count):);
+    return ret;
+}
+
+static inline unsigned long mask_bits(uint8_t mask_width, uint8_t shift_count) {
+    return (unsigned long) (-1) << (mask_width + shift_count) ^ (unsigned long) (-1) << shift_count;
+}
+
 #endif //_X86_H
